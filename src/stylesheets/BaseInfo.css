@@ -1,0 +1,93 @@
+.base-container{
+
+}
+.base-info-container{
+    font-size: 14px;
+    overflow-y: auto;
+    flex: 1;
+    height: initial;
+}
+.panel-style{
+    width: 100%;
+}
+ul,li{
+    padding: 0px;
+    margin: 0px;
+    list-style: none;
+}
+.info-item{
+    height: 30px;
+    line-height: 30px;
+    display: flex;
+}
+.insurance-info{
+    line-height: 30px;
+    display: flex;
+}
+.base-info-title{
+    display: inline-block;
+    width: 100px;
+    overflow: hidden;
+    text-overflow:ellipsis;
+    white-space: nowrap;
+    text-align: right;
+    font-size: 14px;
+    color: #aaa;
+}
+.info-content{
+    padding: 0px 10px;
+    font-size: 14px;
+}
+.info-content-li {
+    width: 133px;
+    display: inline-block;
+    padding: 0px 10px;
+    font-size: 14px;
+}
+.get-price-btn{
+    width: 66px;
+    height: 23px;
+    line-height: 20px;
+    background-color: #fff;
+    color: #fff;
+    background-color: #108ee9;
+    border-radius: 6px;
+    font-size: 16px;
+    border: none;
+    margin: 5px 0px;
+}
+/* reset antd tab */
+.ant-tabs-bar{
+    margin: 0px;
+    height: 77px;
+}
+.ant-collapse-content{
+    padding: 0px !important;
+    border-color: #eaf1ef !important;
+    background-color: #f4f6f7 !important;
+}
+.ant-tabs{
+    height: 100% !important;
+    display: flex;
+    flex-direction: column;
+}
+.ant-tabs:not(.ant-tabs-vertical) > .ant-tabs-content-animated{
+    flex: 1;
+}
+.ant-tabs-ink-bar{
+    z-index: 0 !important;
+}
+.ant-collapse > .ant-collapse-item{
+    border-color: #eaf1ef !important;
+}
+.ant-collapse{
+    border-color: #eaf1ef !important;
+    height: 100%;
+}
+.ant-tabs:not(.ant-tabs-vertical) > .ant-tabs-content > .ant-tabs-tabpane {
+    overflow-y: auto !important;
+    background-color: #f4f6f7;
+}
+.ant-collapse > .ant-collapse-item > .ant-collapse-header{
+    background-color: #f4f6f7;
+}

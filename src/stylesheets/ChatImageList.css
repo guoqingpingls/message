@@ -1,0 +1,104 @@
+.image-wrapper{
+    width: 100%;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    height: initial;
+    overflow-y: auto;
+}
+.image-head-container{
+    height: 48px;
+    line-height: 48px;
+    border-bottom: 1px solid #eaf1ef;
+}
+.download-btn{
+    height: 30px;
+    line-height: 30px;
+    color: #fff;
+    border: none;
+    background-color: #108ee9;
+    width: 80px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.sort-operate{
+    display: inline-block;
+    float: right;
+    cursor: pointer;
+}
+
+.sort-title{
+    margin-right: 10px;
+}
+.sort-container{
+    display: inline-block;
+    vertical-align: middle;
+    height: 27px;
+}
+.sort-container i{
+    font-size: 10px;
+}
+.sort-icon{
+    height: 10px;
+    display: block;
+    line-height: 1;
+    cursor: pointer;
+}
+.item-head{
+    height: 40px;
+    line-height: 40px;
+    font-size: 17px;
+    display: flex;
+    align-items: center;
+}
+.image-item-title{
+
+}
+.item-name{
+    display: inline-block;
+    margin-right: 10px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.item-time{
+    display: inline-block;
+    vertical-align: top;
+
+    
+}
+.image-item{
+    width: 100%;
+    cursor: pointer;
+    border: solid 1px #eee;
+    padding: 10px;
+    background: #fff;
+    margin-bottom: 10px;
+}
+.item-head-avatar {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    background-color: #0761c3;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+.item-head-image{
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    background-color: #0761c3;
+    border-radius: 50%;
+}
+.item-head-image{
+    height: 20px;
+    width: 20px;
+}
+.sort-active{
+    color: #c1c1c1; 
+}

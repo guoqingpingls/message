@@ -1,0 +1,27 @@
+.query-info-container{
+    width: 100%;
+    height: initial;
+    overflow: auto;
+}
+.panel-style{
+    width: 100%;
+}
+.info-item{
+    height: 30px;
+    line-height: 30px;
+    display: flex;
+}
+.base-info-title{
+    display: inline-block;
+    width: 100px;
+    overflow: hidden;
+    text-overflow:ellipsis;
+    white-space: nowrap;
+    text-align: right;
+    font-size: 14px;
+    color: #aaa;
+}
+.info-content{
+    padding: 0px 10px;
+    font-size: 14px;
+}
