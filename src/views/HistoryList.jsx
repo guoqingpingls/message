@@ -1,3 +1,4 @@
+// 历史报价模块 已删除
 import React from 'react';
 import dataSource from '../util/dataSource';
 import '../stylesheets/HistoryList.css';

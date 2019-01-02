@@ -18,6 +18,7 @@ import { Scrollbars } from 'react-custom-scrollbars';
 import request from 'request';
 import config from '../config'
 import CheckModal from './CheckModal';
+import { openNavUrl } from '../util/util.js';
 import {
     get_preprice_ins_inspreprices_priceDetails, //基本信息
     get_preprice_ins_message, //获取询价信息
@@ -49,27 +50,6 @@ const TabPane = Tabs.TabPane;
 const pageName = 'Home';
 const confirm = Modal.confirm;
 const RadioGroup = Radio.Group;
-
-function _openNavUrl(_url, title) {
-    var url = _url;
-    if (_url && _url.substr(0, 1) == '/') {
-        url = "http://" + window.location.host + _url;
-    }
-    var _req = {
-        customerId: 0,
-        type: 0,
-        id: parseInt(Math.random() * 10000).toString(),
-        url: url,
-        title: title,
-        jsCode: ""
-    };
-    try {
-        window.IAgencyWebCall("OpenUrl", JSON.stringify(_req), "");
-    } catch (e) {
-        window.open(url);
-    }
-};
-
 export default class Home extends React.Component {
     constructor(props) {
         super(props);
@@ -121,41 +101,26 @@ export default class Home extends React.Component {
             this.getNodeData();
         });
     };
-    componentWillMount() {
-        // this.getAllInsuranceCp();
-    };
     componentDidMount() {
         this.getNodeData();
         this.refs.scrollbars.scrollToBottom();
         let { cid } = this.props.location.query;
-        if (cid && cid.length > 0) {
-            this.setState({
-                cid: cid,
-                isShowRobBtn: true
-            })
-        } else {
-            this.setState({
-                isShowRobBtn: false
-            })
-        }
-    };
-    // 控制人员消息显示
-    setIm = () => {
-        const { priceId } = this.props.location.query; //从URL获取询价ID
-        var insimlist=sessionStorage.getItem("insimlist");
-        if(insimlist){
-            var imList= JSON.parse(insimlist);
-            imList=imList.filter(function(f){return f.priceId!=priceId});
-            if(imList.length){
-                $("#event_xj .count").html(imList.length);
-                sessionStorage.setItem("insimlist", JSON.stringify(imList));
-            }
-        }
+        this.state.cid = cid
+        // if (cid && cid.length > 0) {
+        //     this.setState({
+        //         cid: cid,
+        //         isShowRobBtn: true
+        //     })
+        // } else {
+        //     this.setState({
+        //         isShowRobBtn: false
+        //     })
+        // }
     };
     componentDidUpdate() {
         this.refs.scrollbars.scrollToBottom();
     };
-    // 获取保险公司
+    // 获取配置了工号的保险公司
     getAllInsuranceCp = (partnerId) => {
         get_insurance_cp_list(partnerId).then((res) => {
             let cpList = res.dtoList;
@@ -306,9 +271,9 @@ export default class Home extends React.Component {
         // const url = currUrl + "/LitePaperOffer/AddOffer?isGuide=true&s=list&itemid=" + baseInfo.priceitemid + '&priceId=' + this.state.priceId + "&SupplierId=" + id + "&VehicleLicenceCode=" + baseInfo.licenseNo + "&VehicleFrameNo=" + baseInfo.frameNo + "&EngineNo=" + baseInfo.engineno + "&OwnerName=" + baseInfo.ownerName + "&OwnerIDCard=" + baseInfo.ownerID + '&OwnerAddress=' + baseInfo.userAddress + '&OwnerMobile=' + baseInfo.userMobile + '&carImageFront=' + baseInfo.carImageFront;
         const url = currUrl + "/LitePaperOffer/AddOffer?isGuide=true&s=list&itemid=" + baseInfo.priceitemid + '&priceId=' + this.state.priceId + '&carImageFront=' + baseInfo.carImageFront;
         if (baseInfo.licenseNo) {
-            _openNavUrl(url, baseInfo.licenseNo + '-报价');
+            openNavUrl(url, baseInfo.licenseNo + '-报价');
         } else {
-            _openNavUrl(url, baseInfo.priceno + '-报价');
+            openNavUrl(url, baseInfo.priceno + '-报价');
         }
 
     }
@@ -328,7 +293,7 @@ export default class Home extends React.Component {
                     urlParmas += self.state.submitForm.ciPolicyNo;
                 }
                 let url = config.url + '/Policy/Lot?insno=' + urlParmas + '&SalesmanId=' + self.state.baseInfo.usersDetail.customerId;
-                _openNavUrl(url, '录入保单');
+                openNavUrl(url, '录入保单');
             },
             onCancel() {
                 console.log('cancel');
@@ -417,7 +382,7 @@ export default class Home extends React.Component {
     }
     /**
         当状态为6的时候发起结算
-   */
+    */
     insFrom = (item, messageList, m) => {
         var self = this;
         var customerId = self.state.baseInfo.usersDetail.customerId;
@@ -696,29 +661,6 @@ export default class Home extends React.Component {
             isShowAbnormal: true
         })
     }
-    // 获取转接数据
-    // getTransferData = () => {
-    //     let { baseInfo } = this.state;
-    //     let partnerId = baseInfo.partnerId;
-    //     let self = this;
-    //     transfer_search(partnerId).then((res) => {
-    //         if (res.resultCode === 22) {
-    //             let list = res.pageInfo.list;
-    //             self.setState({
-    //                 transferList: list
-    //             })
-    //         } else {
-    //             self.setState({
-    //                 transferList: []
-    //             })
-    //         }
-    //     }).catch((err) => {
-    //         console.log('transfer: ', err)
-    //         self.setState({
-    //             transferList: []
-    //         })
-    //     })
-    // }
     // 转接查询
     transferToOthner = () => {
         let { baseInfo } = this.state;
@@ -742,40 +684,6 @@ export default class Home extends React.Component {
             message.info('当前订单不可转接', 2);
         }
     }
-    // transferToOthers = (item) => {
-    //     let { baseInfo } = this.state;
-    //     this.setState({
-    //         isTransfering: true
-    //     })
-    //     let self = this;
-    //     let params = {
-    //         id: this.state.priceId,
-    //         customerid: item.customerid
-    //     }
-    //     transfer_to_others(params).then((res) => {
-    //         if (res.returnCode === 2) {
-    //             self.setState({
-    //                 // showTransferModal: false,
-    //                 isTransfering: false,
-    //                 isShowAbnormal: false
-    //             })
-    //             var tip = baseInfo.customerName + "给您转发了一个新的报价[isgivemeorder]"
-    //             var msg = { type: 'SaaS', target: baseInfo.customerId, msg: tip, "time": new Date().getTime() }
-    //             localStorage.setItem("_receiveMsgKey", JSON.stringify(msg));
-    //             let currUrl = ('http://' + location.host);
-    //             location.href = currUrl + '/LitePaperOffer/list?source=3'
-    //         } else {
-    //             self.setState({
-    //                 isTransfering: false
-    //             })
-    //             message.config({
-    //                 top: 200,
-    //                 duration: 2
-    //             })
-    //             message.info('转接失败', 2);
-    //         }
-    //     })
-    // }
     // 常用回复
     alwaysUseReplay = (e) => {
         let content = e.item.props.children;
@@ -1058,7 +966,6 @@ export default class Home extends React.Component {
             refreshData,
             transferList,
             isTransfering,
-            // showTransferModal,
             allImageList,
             imagesInArr,
             hasChoosed,
@@ -1080,7 +987,6 @@ export default class Home extends React.Component {
             previewImageuri,
             ispreviewImage,
             addressList,
-            // isShowRefuseModal,
             payType,
             isShowPayType,
             isShowConfirmModal,
@@ -1165,61 +1071,6 @@ export default class Home extends React.Component {
                     >
                     <p>您确认要接此订单么？</p>
                 </Modal>
-                {/* <div className='abnormal-wrapper' style={{display: isShowAbnormal ? 'block' : 'none'}}>
-                    <div className='abnormal-container'>
-                        <div className='abnormal-title-contianer'>
-                            <span>关闭或转接</span>
-                            <img src={closeIcon} alt="" className='close' onClick={this.closeAbnormal}/>
-                        </div>
-                        <div className='abnormal-content'>
-                            <div className="tip-content">
-                                <img src={tip} className="tip-icon"/>
-                                <span>
-                                    关闭此订单
-                                    <span style={{color: '#aaa'}}> (建议针对不规范的流程，如果已经通过其他流程提供服务，可进行关闭)</span>
-                                </span>
-                            </div>
-                            <div className='abnormal-refuse-content'>
-                                <textarea ref="refuseReason" className='refuse-text' row='6' maxLength='100' placeholder="请输入关闭原因"/>
-                            </div>
-                            <div className='refuse-footer'>
-                                <button className='refuse-btn' onClick={this.refuseOrder}>关闭</button>
-                            </div>
-                            <div className="tip-content">
-                                <img src={tip} className="tip-icon"/>
-                                <span>转接</span>
-                            </div>
-                            <div className='transfer-contianer'>
-                                <div className='transfer-list' style={{display: transferList.length > 0 ? 'inline-block' : 'none'}}>
-                                    <Scrollbars>
-                                        <ul>
-                                            {
-                                                transferList.length && transferList.map((item, index) => {
-                                                    return (
-                                                        <li className='transfer-item' key={index}>
-                                                            {item.realname}
-                                                            <button className='transfer-btn' onClick={() => this.transferToOthers(item)}>转接</button>
-                                                        </li>
-                                                    )
-                                                })
-                                            }
-                                        </ul>
-                                    </Scrollbars>
-
-                                </div>
-                                <div style={{display: transferList.length === 0 ? 'inline-block' : 'none'}} className='no-transfer'>
-                                    暂无可转接人员
-                                </div>
-                            </div>
-                            <div className='bg-container' style={{ display: isTransfering ? 'block' : 'none', backgroundColor: 'rgba(7, 17, 27, 0.4)' }}>
-                                <div className='bg-content'>
-                                    <Icon type="loading" className='bg-icon' />
-                                    <span className='bg-title'>正在转接</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div> */}
             </div>
         )
     }

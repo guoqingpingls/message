@@ -136,11 +136,32 @@ function isEmptyObject(obj) {
 　　}　　
 　　return false;
 }
+// 打开地址
+function openNavUrl(_url, title) {
+    var url = _url;
+    if (_url && _url.substr(0, 1) == '/') {
+        url = "http://" + window.location.host + _url;
+    }
+    var _req = {
+        customerId: 0,
+        type: 0,
+        id: parseInt(Math.random() * 10000).toString(),
+        url: url,
+        title: title,
+        jsCode: ""
+    };
+    try {
+        window.IAgencyWebCall("OpenUrl", JSON.stringify(_req), "");
+    } catch (e) {
+        window.open(url);
+    }
+};
 module.exports = {
     insuranceInString,
     changesupplierIdToName,
     getInsDetailId,
     filterInsurance,
     hasCommercialInsurance,
-    isEmptyObject
+    isEmptyObject,
+    openNavUrl
 }
