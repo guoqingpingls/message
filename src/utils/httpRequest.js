@@ -40,11 +40,7 @@ const httpRequest = (url, method = "GET", data = {}, contentType = 'application/
         });
     });
 };
-//  tip： 图片地址也需要对应更改
-const baseUrl = 'https://openapi.youbaolian.cn/api';
-// const baseUrl = "http://39.106.201.182:8866/api";
-// const baseUrl = "http://39.106.201.182:8866/api";
-// const baseUrl = 'https://openapi.ananyun.net/api';
+
 // const baseUrl = 'http://192.168.1.113:8866/api';
 // const baseUrl = 'http://192.168.1.139:8866/api';
 
