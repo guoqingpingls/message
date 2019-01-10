@@ -460,56 +460,6 @@ export default class SubmitOffer extends React.Component {
         // this.refreshData();
         params.coveragelist = JSON.stringify(totalList);
         this.props.getPrice(params);
-        // let dataReg = /^[1-9]\d{3}(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])$/;
-        // if (this.hasSomeCommission(1) && dataReg.test(ciBeginDate) || this.hasSomeCommission(2) && dataReg.test(biBeginDate)) {
-        //     let params = {
-        //         supplierid: supplierId,
-        //         totalpremium: Number(totalpremium),
-        //         imageurls,
-        //         cipremium: Number(cipremium),
-        //         bipremium: Number(bipremium),
-        //         showcicommission: Number(showcicommission),
-        //         showbicommission: Number(showbicommission),
-        //         commission: Number(commission),
-        //         carshiptax: Number(carshiptax),
-        //         showcarshiptax: Number(showcarshiptax),
-        //         cicommission: Number(ciCommission),
-        //         bicommission: Number(biCommission),
-        //         carshiptaxcommission: Number(carshipCommission),
-        //         bibegindate: biBeginDate,
-        //         cibegindate: ciBeginDate,
-        //         priceid: this.props.priceId,
-        //         separate: isSeparate,
-        //         // coverageList: JSON.stringify(totalList)
-        //     }
-        //     if (isHasBi) {
-        //         let totalBi = 0;
-
-        //         totalList.map((item) => {
-        //             if (item.InsuredPremium && Number(item.InsuredPremium) > 0) {
-        //                 totalBi = totalBi + Number(item.InsuredPremium) * 100
-        //             }
-        //         })
-        //         if (totalBi/100 != bipremium) {
-        //             params.coveragelist = JSON.stringify(totalList);
-        //             this.setState({
-        //                 isShowToast: true,
-        //                 submitParams: params
-        //             })
-        //             return;
-        //         }
-                
-        //     }
-        //     // this.refreshData();
-        //     params.coveragelist = JSON.stringify(totalList);
-        //     this.props.getPrice(params);
-        // } else {
-        //     message.info('日期格式有误，正确格式为20180808');
-        //     message.config({
-        //         // top: 100,
-        //         duration: 2
-        //     })
-        // }
     };
     cancel = () => {
         this.props.closeSubmit();

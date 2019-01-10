@@ -1,4 +1,4 @@
-.submit-offer-container {
+/* .submit-offer-container {
     position: absolute;
     top: 0;
     bottom: 0;
@@ -24,15 +24,15 @@
     height: 60px;
     line-height: 60px;
     /* position: relative; */
-    display: flex;
+    /* display: flex;
     align-items: center;
     justify-content: space-between;
     padding-right: 20px;
     padding-left: 20px;
     font-size: 21px;
     border-bottom: 1px solid #eee;
-}
-.submit-title-close{
+} */
+/* .submit-title-close{
     font-size: 24px;
     color: #aaa;
     width: 20px;
@@ -71,11 +71,10 @@
 .insurance-select{
     height: 30px;
     width: 300px;
-}
+} */
 
 /* 保费和返佣点位部分 */
-.submit-item-container {
-    /* width: 300px; */
+/* .submit-item-container {
     display: flex;
     flex-direction: row;
     margin-top: 20px;
@@ -92,9 +91,9 @@
     display: inline-block;
     text-align: center;
     font-size: 15px;
-}
+} */
 /* 截图 */
-.sub-image-container{
+/* .sub-image-container{
     width: 100%;
     height: 80px;
     box-sizing: border-box;
@@ -107,9 +106,9 @@
     width: 50px;
     height: 50px;
     cursor: pointer;
-}
+} */
 /* 操作 */
-.submit-operate-container{
+/* .submit-operate-container{
     display: flex;
     flex: 1;
     align-items: center;
@@ -150,19 +149,18 @@
 .submit-footer-item {
     flex: 1;
     padding-left: 10px;
-}
+} */
 
-.sub-fee{
+/* .sub-fee{
     display: inline-block;
-    /* width: 80px; */
     overflow: hidden;
     text-overflow:ellipsis;
     white-space: nowrap;
     color: #f00;
     vertical-align: bottom;
-}
+} */
 /* 明细 */
-.insurance-detail-wrapper{
+/* .insurance-detail-wrapper{
     width: 100%;
     
 }
@@ -183,17 +181,17 @@
     justify-content: space-between;
     height: 30px;
     align-items: center;
-}
-.insurance-container .item-container .ins{
+} */
+/* .insurance-container .item-container .ins{ */
     /* width: 140px; */
-    display: inline-block;
+    /* display: inline-block;
     font-size: 13px;
-}
-.insurance-container .item-container .input-style{
+} */
+/* .insurance-container .item-container .input-style{
     border: 1px solid #ddd;
     padding-left: 5px;
 }
 .insurance-container .item-container .ins-code{
     color: #aaa;
     display: inline-block;
-}
+} */

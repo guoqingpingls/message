@@ -20,6 +20,7 @@ export default class Message extends React.Component{
   }
   render () {
     let {messageList, baseInfo} = this.props;
+    let {btnArray} = this.state;
     const buttonStatusValue = ['', '已确认缴费，生成保单', '生成保单', '完成保单', '已确认收到', '保单已生成', '保单已完成'];
     let message = messageList.map((item, index) => {
       // usertype === 1 小程序
@@ -50,12 +51,34 @@ export default class Message extends React.Component{
                     }
                   </div>
                   <span className='message-status'>{item.remarks || ''}</span>
-                  <button onClick={() => { this.operateFrom(item) }}
+                  {/* <span className='message-status'>{btnArray[0] && btnArray[0].btnText || ''}</span> */}
+                  {
+                    item.btnArray && item.btnArray.length
+                    ? item.btnArray.map((ite, idx) => {
+                      return (
+                        <button key={idx} onClick={() => { this.operateFrom(ite) }}
+                          className={ite.btnClassName}>
+                          {ite.btnText}
+                        </button>
+                      )
+                    })
+                    : null
+                  }
+                  {/* {
+                    item.buttonstatus > 0
+                    ? <button onClick={() => { this.operateFrom(item) }}
+                      style={{ display: item.buttonstatus > 0 ? '' : 'none' }}
+                      className={item.buttonstatus > 3 ? 'message-btn-default' : 'message-btn-default btn-can-click'}>
+                      {buttonStatusValue[item.buttonstatus]}
+                    </button>
+                    : null
+                  } */}
+                  {/* <button onClick={() => { this.operateFrom(item) }}
                     style={{ display: item.buttonstatus > 0 ? '' : 'none' }}
                     className={item.buttonstatus > 3 ? 'message-btn-default' : 'message-btn-default btn-can-click'}>
                     {buttonStatusValue[item.buttonstatus]}
-                  </button>
-                  <button
+                  </button> */}
+                  {/* <button
                     onClick={() => {this.operateFrom(item)}}
                     className={item.buttonstatus === -3 && baseInfo.status !== 37 ? 'message-btn-default' : 'message-btn-default btn-can-click'}
                     style={{display: item.buttonstatus === -3 ? '' : 'none'}}
@@ -68,7 +91,7 @@ export default class Message extends React.Component{
                     style={{display: item.buttonstatus === -2 ? '' : 'none'}}
                   >
                     发送支付方式
-                  </button>
+                  </button> */}
               </div>
             </div>
           </li>
@@ -104,38 +127,50 @@ export default class Message extends React.Component{
                     })
                   }
                 </div>
-                <button
+                {
+                  item.btnArray && item.btnArray.length
+                  ? item.btnArray.map((ite, idx) => {
+                    return (
+                      <button key={idx} onClick={() => { this.operateFrom(ite) }}
+                        className={ite.btnClassName}>
+                        {ite.btnText}
+                      </button>
+                    )
+                  })
+                  : null
+                }
+                {/* <button
                   onClick={() => {this.operateFrom(item)}}
                   className={item.buttonstatus > 3 ? 'message-btn-default' : 'message-btn-default btn-can-click'}
                   style={{display: item.buttonstatus > 0 ? '' : 'none'}}
                 >
                   {buttonStatusValue[item.buttonstatus]}
-                </button>
+                </button> */}
                 {/* 报价： 确认此报价  */}
-                <button
+                {/* <button
                   onClick={() => {this.operateFrom(item)}}
                   className={item.buttonstatus === -1 && baseInfo.status !== 2 ? 'message-btn-default' : 'message-btn-default btn-can-click'}
                   style={{display: item.buttonstatus === -1 ? '' : 'none'}}
                 >
                   确认此报价
-                </button>
+                </button> */}
                   {/* 缴费对应： 发送支付方式 */}
-                <button
+                {/* <button
                   onClick={() => {this.operateFrom(item)}}
                   className={item.buttonstatus === -2 && baseInfo.status !== 23 ? 'message-btn-default' : 'message-btn-default btn-can-click'}
                   style={{display: item.buttonstatus === -2 ? '' : 'none'}}
                 >
                   发送支付方式
-                </button>
+                </button> */}
                 {/* 缴费对应： 选择支付方式 */}
-                <button
+                {/* <button
                   onClick={() => {this.operateFrom(item)}}
                   className={item.buttonstatus === -3 && baseInfo.status !== 37 ? 'message-btn-default' : 'message-btn-default btn-can-click'}
                   style={{display: item.buttonstatus === -3 ? '' : 'none'}}
                 >
                   业务员已经缴费并生成保单
-                </button>
-                <button
+                </button> */}
+                {/* <button
                   onClick={() => {this.insFrom(item, messageList, 11)}}
                   className='message-btn-default  btn-can-click'
                   style={{display: (item.buttonstatus == 6 && (item.info.indexOf('交强险保单号') > -1)) ? '' : 'none'}}
@@ -144,7 +179,7 @@ export default class Message extends React.Component{
                   onClick={() => { this.insFrom(item, messageList, 10) }}
                   className='message-btn-default  btn-can-click'
                   style={{display: (item.buttonstatus == 6 && (item.info.indexOf('商业险保单号') > -1)) ? '' : 'none'}}
-                >商业险录单</button>
+                >商业险录单</button> */}
               </div>
             </div>
             <div className='avatar-container right-avatar'>

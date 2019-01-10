@@ -847,3 +847,6 @@ ul,li{
     background-color: #fff;
     cursor: pointer;
 }
+.ant-tabs-bar{
+    margin: 0px !important;
+}

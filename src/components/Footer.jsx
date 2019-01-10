@@ -6,6 +6,9 @@ import sendImage from '../assets/images/send-image.png';
 export default class Footer extends React.Component {
   constructor (props) {
     super(props);
+    this.state = {
+      isShift: false,
+    }
   }
   alwaysUseReplay = () => {
     this.props.alwaysUseReplay();
@@ -18,14 +21,32 @@ export default class Footer extends React.Component {
     this.props.replyRemark(content)
   }
   keyDown = (e) => {
-    let content = this.refs.reply.value;
-    this.props.keyDown(e, content)
+    let { isShift } = this.state;
+    let self = this;
+    let flag = 1
+    if (e.keyCode === 16 || isShift) {
+        self.state.isShift = true
+        setTimeout(() => {
+            self.state.isShift = false
+        }, 200)
+    } else if (e.keyCode === 13) {
+        e.cancelBubble = true;
+        e.preventDefault();
+        e.stopPropagation();
+        if (flag === 1) {
+        this.props.replyRemark(content)
+        }
+    }
   }
   clearvalue = () => {
     this.refs.reply.value = ''
   }
   abOperate = () => {
     this.props.abOperate()
+  }
+  // 显示报价弹窗
+  insertPrice = () => {
+    this.props.openInsertModal()
   }
   render () {
     let {baseInfo} = this.props;
@@ -59,13 +80,15 @@ export default class Footer extends React.Component {
             onKeyDown={(e) => { this.keyDown(e) }}>
           </textarea>
           <div className='operate-container'>
-            <div className='left' onClick={this.abOperate} style={{ visibility: (Number(baseInfo.status) != -9) ? 'visible' : 'hidden' }}>
+            {/* <div className='left' onClick={this.abOperate} style={{ visibility: (Number(baseInfo.status) != -9) ? 'visible' : 'hidden' }}>
               <img src={tip} className="left-tip"/>
               <span>关闭或转接</span>
+            </div> */}
+            <div className='left' onClick={this.insertPrice}>
+              {/* <img src={tip} className="left-tip"/> */}
+              <span>插入报价</span>
             </div>
             <div className='right'>
-              <button className='btn-default' style={{ display: Number(baseInfo.status) === 1 || Number(baseInfo.status) === 2 ? 'inline-block' : 'none' }} onClick={this.btnClick}>提交报价</button>
-              <button className='btn-default' style={{ display: (baseInfo.customerId===0 && Number(baseInfo.status) != -9) ? 'inline-block' : 'none' }} onClick={() => { this.showRobModal() }}>抢单</button>
               <button className='btn-default' onClick={() => { this.replyRemark() }}>发表回复</button>
             </div>
           </div>

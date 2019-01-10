@@ -1,6 +1,6 @@
 import {apiHttpRequest} from '../utils/httpRequest';
 
-export const get_preprice_ins_message = (priceId) => {
+export const get_message_list = (priceId) => {
     return apiHttpRequest(`/preprice-ins/messages/${priceId}`)
 };
 
@@ -18,7 +18,7 @@ export const post_preprice_ins_message = (data) => {
     return apiHttpRequest('/preprice-ins/messages', 'POST', body);
 };
 
-export const get_preprice_ins_inspreprices_priceDetails = (priceId) => {
+export const get_price_detail = (priceId) => {
     return apiHttpRequest(`/preprice-ins/inspreprices/priceDetails?priceId=${priceId}`)
 };
 

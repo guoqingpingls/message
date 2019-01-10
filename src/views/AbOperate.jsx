@@ -41,16 +41,17 @@ export default class AbOperate extends React.Component {
   }
   // 取消
   cancel = () => {
+    this.props.closeAbModal()
   }
   // 转接给其他人
   transferToOthers = (item) => {
-    let { baseInfo } = this.props;
+    let { baseInfo, priceId } = this.props;
     this.setState({
       isTransfering: true
     })
     let self = this;
     let params = {
-      id: this.state.priceId,
+      id: priceId,
       customerid: item.customerid
     }
     transfer_to_others(params).then((res) => {
@@ -73,21 +74,22 @@ export default class AbOperate extends React.Component {
     })
   }
   refuseOrder = () => {
-    let {baseInfo} = this.props;
+    let {baseInfo, priceId} = this.props;
     let refuseReason = this.refs.refuseReason.value || '';
     if (refuseReason.trim().length === 0) {
       message.info('请输入拒绝原因！！')
       return
     }
     let params = {
-      id: baseInfo.priceId,
+      id: priceId,
       closeReason: refuseReason
     }
     let self = this;
     close_order(params).then((res) => {
       if (res.returnCode === 1) {
         var str = ('您的询价单已经被关闭，关闭原因是：'+refuseReason);
-        self.props.refuseOrder(str)
+        self.props.replyRemark(str, true)
+        self.props.closeAbModal(1)
       } else {
         message.info(res.message, 2);
       }
@@ -109,7 +111,7 @@ export default class AbOperate extends React.Component {
             <textarea ref="refuseReason" className='refuse-text' row='6' maxLength='100' placeholder="请输入关闭原因"/>
           </div>
           <div className='refuse-footer'>
-            <button className='refuse-btn' onClick={this.refuseOrder}>关闭</button>
+            <button className='refuse-btn' onClick={this.refuseOrder}>关闭订单</button>
           </div>
           <div className="tip-content">
             <img src={tip} className="tip-icon"/>

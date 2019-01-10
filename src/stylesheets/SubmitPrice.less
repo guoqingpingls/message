@@ -1,0 +1,139 @@
+.submit-price-wrapper{
+  text-align: left;
+  .submit-head{
+    height: 40px;
+    line-height: 40px;
+    padding: 0px 20px;
+    .label{
+      margin-right: 10px;
+      &.label-right{
+        margin-left: 20px;
+      }
+    }
+  }
+  .select-insurance{
+    height: 40px;
+    line-height: 40px;
+    padding-left: 20px;
+    margin-top: 5px;
+    .title{
+      height: 30px;
+      line-height: 30px;
+      display: inline-block;
+      margin-right: 10px;
+    }
+    .select-container{
+      height: 30px;
+      width: 300px;
+    }
+  }
+  .coverage-list-container{
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    .submit-item-container{
+      display: flex;
+      flex-direction: row;
+      margin-top: 20px;
+      width: 100%;
+      min-width: 300px;
+      align-items: center;
+      justify-content: center;
+      .item{
+        flex: 1;
+        .fee{
+          display: block;
+          height: 24px;
+          line-height: 24px;
+        }
+        .default{
+          width: 80%;
+          padding-left: 5px;
+          border: 1px solid #ddd;
+          height: 30px;
+          line-height: 30px;
+        }
+      }
+    }
+  }
+  .detail-wrapper{
+    width: 100%;
+    padding-left: 20px;
+    margin-bottom: 10px;
+    padding-right: 10px;
+    .title{
+      height: 30px;
+      line-height: 30px;
+      display: inline-block;
+      width: 100px;
+      font-weight: 600;
+      color: #108ee9;
+    }
+    .insurance-container{
+      width: 100%;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      .insurance-item-container{
+        width: 100%;
+        display: flex;
+        height: 40px;
+        justify-content: space-between;
+        align-items: center;
+        padding-right: 20px;
+        padding-left: 20px;
+        .item-fee{
+          border: 1px solid #ccc;
+          height: 30px;
+        }
+      }
+    }
+  }
+  .upload-image-container{
+    width: 100%;
+    padding-left: 20px;
+    .upload-image-title{
+      height: 30px;
+      line-height: 30px;
+      display: inline-block;
+    }
+  }
+  .submit-footer-container{
+    font-size: 12px;
+    width: 100%;
+    height: 100px;
+    border-top: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    .total-price-container{
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      flex: 1;
+      align-items: center;
+      .price-item{
+        flex: 1;
+        padding-left: 10px;
+        .sub-fee{
+          display: inline-block;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          color: #f00;
+          vertical-align: bottom;
+        }
+      }
+    }
+    .operate-container{
+      display: flex;
+      flex: 1;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 20px;
+      .operate-btn{
+        margin-right: 10px;
+      }
+    }
+  }
+}
