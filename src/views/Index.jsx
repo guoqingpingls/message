@@ -78,7 +78,8 @@ export default class Index extends React.Component{
       fromRecord: false,    //是否从报价记录获取数据
       isFirstGet: true, // 获取保险公司列表只需要获取一次
       allInsuranceCp: [],   // 当前商户的保险公司列表
-  };
+      isShowToast: false,   // 是否显示提示
+    };
   }
   componentDidMount () {
     // 从地址栏获取priceId cid
@@ -389,6 +390,17 @@ export default class Index extends React.Component{
       message.info('当前订单不可报价', 2);
     }
   };
+  // 关闭报价弹窗
+  closeSumitPriceModal = (type) => {
+    this.setState({
+      isShowSubmit: false
+    })
+    // 刷新messagelist priceDetail
+    if (type) {
+      this.getMessageList();
+      this.getPriceDetail()	
+    }
+  }
   // 获取保险公司
   getAllInsuranceCp = (partnerId) => {
     let tmpCpList =  []
@@ -438,7 +450,8 @@ export default class Index extends React.Component{
       defaultImageUri,
       cid,
       isShowRobTip,
-      fromRecord
+      fromRecord,
+      isShowToast
     } = this.state;
     return (
       <div className='content-wrapper'>
@@ -503,7 +516,15 @@ export default class Index extends React.Component{
         }
         {
           isShowSubmit
-          ? <SubmitPrice priceId={priceId} baseInfo={baseInfo} fromRecord={fromRecord} allInsuranceCp={allInsuranceCp}/>
+          ? <SubmitPrice
+              priceId={priceId}
+              baseInfo={baseInfo}
+              fromRecord={fromRecord}
+              allInsuranceCp={allInsuranceCp}
+              getMessageList={this.getMessageList}
+              getPriceDetail={this.getPriceDetail}
+              closeSumitPriceModal={this.closeSumitPriceModal}
+            />
           : null
         }
         <Modal title="接单提示"
@@ -517,5 +538,5 @@ export default class Index extends React.Component{
         </Modal>
       </div>
     )
-}
+  }
 }
