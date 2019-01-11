@@ -56,7 +56,7 @@ export default class Message extends React.Component{
                     item.btnArray && item.btnArray.length
                     ? item.btnArray.map((ite, idx) => {
                       return (
-                        <button key={idx} onClick={() => { this.operateFrom(ite) }}
+                        <button key={idx} onClick={() => { this.operateFrom(item) }}
                           className={ite.btnClassName}>
                           {ite.btnText}
                         </button>
@@ -131,7 +131,7 @@ export default class Message extends React.Component{
                   item.btnArray && item.btnArray.length
                   ? item.btnArray.map((ite, idx) => {
                     return (
-                      <button key={idx} onClick={() => { this.operateFrom(ite) }}
+                      <button key={idx} onClick={() => { this.operateFrom(item) }}
                         className={ite.btnClassName}>
                         {ite.btnText}
                       </button>

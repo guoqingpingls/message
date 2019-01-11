@@ -165,12 +165,21 @@ export default class Index extends React.Component{
   }
   getBtnArray = (item, status) => {
     let btnArray = []
+    // 抢单
     if (status === 301) {
       btnArray.push({
         btnClassName: 'message-btn-default btn-can-click',
         btnText: '抢单'
       })
     }
+    // 确认报价
+    if (status === 2 && item.buttonstatus === -1 && item.checkStatus === 1) {
+      btnArray.push({
+        btnClassName: 'message-btn-default btn-can-click',
+        btnText: '确认报价'
+      })
+    }
+
     return btnArray;
   }
   // 回复消息
@@ -249,6 +258,7 @@ export default class Index extends React.Component{
    * 6.保单已完成
    */
   operateFrom = (item) => {
+    let self = this;
     let btnStatus = item.buttonstatus;
     let { baseInfo, priceId, cid } = this.state;
     // 抢单
@@ -259,91 +269,127 @@ export default class Index extends React.Component{
       })
       return;
     }
-    let self = this;
-    if (btnStatus < -3 || btnStatus > 3) {
-      message.info('当前状态下不可操作！！！')
-      return;
-    } else if (baseInfo.status === 23 && btnStatus === -2) {
-      this.showPayType()
-    } else if (baseInfo.status === 37 && btnStatus === -3) {
-      //付款弹窗---------------------//替客户操作
-      confirm({
-        title: '该操作仅当是业务员没有按照标准流程操作，您替业务员完成的一些行为，您确认要替业务员进行操作么？（例如：业务员在微信做了支付了，在微信确认报价了...）',
-        okText: "确认",
-        cancelText: "取消",
-        onOk() {
-          self.setState({
-            isShowModal: true
-          });
-        },
-        onCancel() {}
-      });
-    } else if (baseInfo.status === 2 && btnStatus === -1) {
+    // 确认报价
+    if (baseInfo.status === 2 && item.buttonstatus === -1 && item.checkStatus === 1) {
       confirm({
         title: '该操作仅当是业务员没有按照标准流程操作，您替业务员完成的一些行为，您确认要替业务员进行操作么？（例如：业务员在微信做了支付了，在微信确认报价了...）',
         okText: "确认",
         cancelText: "取消",
         onOk() {
           //确认报价---------------------//替客户操作
-          let params = {
-            priceid: item.priceid,
-            priceitemid: item.priceitemid,
-            config: item.config,
-            id: item.id,
-            cid: cid
-          }
-          confirm_price(params).then((res) => {
-            let msgContent = {};
-            msgContent.type = "IM";
-            msgContent.target = 'C_' + baseInfo.userid;
-            msgContent.msg = 'replyContent';
-            msgContent.time = Date.now();
-            localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
-            self.getNodeData();
-          }).catch((err) => {
-            console.log(err)
-          })
+          self.confirmPrice(item)
+          return;
         },
         onCancel() {}
       });
-    } else if (baseInfo.status === 35 && btnStatus === 1) {
-      this.setState({
-        isShowModal: true
-      });
-    } else if (baseInfo.status === 24 && btnStatus === 2) {
-      // 生成保单
-      this.setState({
-        isShowModal: true
-      });
-    } else if (baseInfo.status === 40 && btnStatus === 3) {
-      // 完成保单-------------------------//替客户操作
-      // 暂时设定的id
-      confirm({
-        title: '该操作仅当是业务员没有按照标准流程操作，您替业务员完成的一些行为，您确认要替业务员进行操作么？（例如：业务员在微信做了支付了，在微信确认报价了...）',
-        okText: "确认",
-        cancelText: "取消",
-        onOk() {
-          finish_policy(priceId, cid).then((res) => {
-            console.log(pageName, ' res ', res)
-            let msgContent = {};
-            msgContent.type = "IM";
-            msgContent.target = 'C_' + baseInfo.userid;
-            msgContent.msg = 'replyContent';
-            msgContent.time = Date.now();
-            localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
-            self.getNodeData();
-          }, (err) => {
-            console.log(pageName, ' error ', err)
-          }).catch((err) => {
-            console.log(pageName, ' catch error ', err)
-          })
-        },
-        onCancel() {}
-      });
-    } else {
-      message.info('当前状态下不可操作！！！')
     }
+    // if (btnStatus < -3 || btnStatus > 3) {
+    //   message.info('当前状态下不可操作！！！')
+    //   return;
+    // } else if (baseInfo.status === 23 && btnStatus === -2) {
+    //   this.showPayType()
+    // } else if (baseInfo.status === 37 && btnStatus === -3) {
+    //   //付款弹窗---------------------//替客户操作
+    //   confirm({
+    //     title: '该操作仅当是业务员没有按照标准流程操作，您替业务员完成的一些行为，您确认要替业务员进行操作么？（例如：业务员在微信做了支付了，在微信确认报价了...）',
+    //     okText: "确认",
+    //     cancelText: "取消",
+    //     onOk() {
+    //       self.setState({
+    //         isShowModal: true
+    //       });
+    //     },
+    //     onCancel() {}
+    //   });
+    // } else if (baseInfo.status === 2 && btnStatus === -1) {
+    //   confirm({
+    //     title: '该操作仅当是业务员没有按照标准流程操作，您替业务员完成的一些行为，您确认要替业务员进行操作么？（例如：业务员在微信做了支付了，在微信确认报价了...）',
+    //     okText: "确认",
+    //     cancelText: "取消",
+    //     onOk() {
+    //       //确认报价---------------------//替客户操作
+    //       let params = {
+    //         priceid: item.priceid,
+    //         priceitemid: item.priceitemid,
+    //         config: item.config,
+    //         id: item.id,
+    //         cid: cid
+    //       }
+    //       confirm_price(params).then((res) => {
+    //         let msgContent = {};
+    //         msgContent.type = "IM";
+    //         msgContent.target = 'C_' + baseInfo.userid;
+    //         msgContent.msg = 'replyContent';
+    //         msgContent.time = Date.now();
+    //         localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
+    //         self.getNodeData();
+    //       }).catch((err) => {
+    //         console.log(err)
+    //       })
+    //     },
+    //     onCancel() {}
+    //   });
+    // } else if (baseInfo.status === 35 && btnStatus === 1) {
+    //   this.setState({
+    //     isShowModal: true
+    //   });
+    // } else if (baseInfo.status === 24 && btnStatus === 2) {
+    //   // 生成保单
+    //   this.setState({
+    //     isShowModal: true
+    //   });
+    // } else if (baseInfo.status === 40 && btnStatus === 3) {
+    //   // 完成保单-------------------------//替客户操作
+    //   // 暂时设定的id
+    //   confirm({
+    //     title: '该操作仅当是业务员没有按照标准流程操作，您替业务员完成的一些行为，您确认要替业务员进行操作么？（例如：业务员在微信做了支付了，在微信确认报价了...）',
+    //     okText: "确认",
+    //     cancelText: "取消",
+    //     onOk() {
+    //       finish_policy(priceId, cid).then((res) => {
+    //         console.log(pageName, ' res ', res)
+    //         let msgContent = {};
+    //         msgContent.type = "IM";
+    //         msgContent.target = 'C_' + baseInfo.userid;
+    //         msgContent.msg = 'replyContent';
+    //         msgContent.time = Date.now();
+    //         localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
+    //         self.getNodeData();
+    //       }, (err) => {
+    //         console.log(pageName, ' error ', err)
+    //       }).catch((err) => {
+    //         console.log(pageName, ' catch error ', err)
+    //       })
+    //     },
+    //     onCancel() {}
+    //   });
+    // } else {
+    //   message.info('当前状态下不可操作！！！')
+    // }
   };
+  confirmPrice = (item) => {
+    let {cid, baseInfo} = this.state;
+    let params = {
+      priceid: item.priceid,
+      priceitemid: item.priceitemid,
+      config: item.config,
+      id: item.id,
+      cid: cid
+    }
+    confirm_price(params).then((res) => {
+      let msgContent = {};
+      msgContent.type = "IM";
+      msgContent.target = 'C_' + baseInfo.userid;
+      msgContent.msg = 'replyContent';
+      msgContent.time = Date.now();
+      localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
+      // refresh messageList & refresh order status
+      self.getMessageList();
+      self.getPriceDetail();
+    }).catch((err) => {
+      console.log(err)
+    })
+  }
   showPayType = () => {
     this.setState({
       isShowPayType: true
