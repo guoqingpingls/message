@@ -15,7 +15,7 @@ export default class MpMpdal extends React.Component {
     let {title, isShowFooter, height} = this.props;
     return(
       <div className='modal-wrapper'>
-        <div className='modal-container' style={{height: height || '50%'}}>
+        <div className='modal-container' style={height ? {height: height} : null}>
           <div className='title-wrapper'>
             <span>{title || ''}</span>
             <Icon type="close" onClick={this.cancel} />

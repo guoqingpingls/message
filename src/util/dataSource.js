@@ -187,6 +187,40 @@ const insuranceCpList = [
         id: 9833
     }
 ];
+const coverageList = [
+  {label: '车损险', value: '10001'},
+  {label: '车损险 ', value: '30001'},
+  {label: '三责险 ', value: '10002'},
+  {label: '三责险 ', value: '30002'},
+  {label: '盗抢险 ', value: '10003'},
+  {label: '盗抢险 ', value: '30003'},
+  {label: '司机险 ', value: '10004'},
+  {label: '司机险 ', value: '30004'},
+  {label: '乘客险 ', value: '10005'},
+  {label: '乘客险 ', value: '30005'},
+  {label: '交强险 ', value: '10501'},
+  {label: '玻璃险 ', value: '20201'},
+  {label: '车身划痕险 ', value: '20202'},
+  {label: '车身划痕险 ', value: '30202'},
+  {label: '自燃损失险 ', value: '20203'},
+  {label: '自燃损失险 ', value: '30203'},
+  {label: '涉水险 ', value: '20204'},
+  {label: '涉水险 ', value: '30204'},
+  {label: '指定修理厂险 ', value: '20205'},
+  {label: '新增设备损失险 ', value: '20206'},
+  {label: '新增设备损失险 ', value: '30206'},
+  {label: '车上货物责任险 ', value: '20207'},
+  {label: '车上货物责任险 ', value: '30207'},
+  {label: '精神损害抚慰金责任险 ', value: '20208'},
+  {label: '精神损害抚慰金责任险 ', value: '30208'},
+  {label: '修理期间费用补偿险 ', value: '20209'},
+  {label: '机动车损失保险无法找到第三方特约险 ', value: '20210'},
+  {label: '特种车损失保险无法找到第三方特约险 ', value: '20251'},
+  {label: '起重_装载_挖掘车辆损失扩展条款 ', value: '20252'},
+  {label: '特种车辆固定设备_仪器损坏扩展条款 ', value: '20253'},
+  {label: '基本险 ', value: '30100'}
+]
 module.exports = ({
-    insuranceCpList
+    insuranceCpList,
+    coverageList
 })

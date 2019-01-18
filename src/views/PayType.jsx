@@ -4,7 +4,8 @@ import MpModal from '../components/MpModal';
 import {Radio, Icon, Upload, Modal, message} from 'antd';
 const RadioGroup = Radio.Group;
 import {
-  parse_image               // 识别图片
+  parse_image,            // 识别图片
+  confirm_pay_type,       // 发送支付方式
 } from '../services/index';
 export default class PayType extends React.Component {
   constructor(props) {
@@ -21,7 +22,7 @@ export default class PayType extends React.Component {
   // 选择支付方式
   changePaytype = (e) => {
     this.setState({
-        payType: e.target.value,
+      payType: e.target.value,
     });
   }
   // 上传图片
@@ -42,6 +43,7 @@ export default class PayType extends React.Component {
   analysisImageCode (uri) {
     let self = this
     parse_image(uri).then((res) => {
+      console.log(res)
       if (res.CODE === 200) {
         self.setState({
           payLink: res.SUCCESS || ''
@@ -71,7 +73,7 @@ export default class PayType extends React.Component {
     })
   };
   // 发送支付方式
-  sure = () => {
+  sendPayType = () => {
     let {payType, fileList, payLink} = this.state;
     let {priceId, defaultImageUri, cid, baseInfo} = this.props;
     let params = {
@@ -93,7 +95,19 @@ export default class PayType extends React.Component {
     if (payType === 1 && payLink.length > 0) {
       params.payLink = payLink
     }
-    this.props.sendPayType(params)
+    confirm_pay_type(params).then((res) => {
+      if (res.returnCode === 200) {
+        let msgContent = {};
+        msgContent.type = "IM";
+        msgContent.target = 'C_' + baseInfo.userid;
+        msgContent.msg = '';
+        msgContent.time = Date.now();
+        localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
+        self.props.closePayType(1)
+      } else {
+        message.info(res.message);
+      }
+    })
   }
   // 取消
   cancel = () => {
@@ -107,7 +121,7 @@ export default class PayType extends React.Component {
       </div>
     );
     return (
-      <MpModal title='支付方式' sure={this.sure} cancel={this.cancel}>
+      <MpModal title='支付方式' sure={this.sendPayType} cancel={this.cancel}>
         <div className='pay-type-wrapper'>
           <RadioGroup className='radio-container' onChange={this.changePaytype} value={payType}>
             <Radio className='pay-radio' value={1}>支付给保险公司</Radio>

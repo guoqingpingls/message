@@ -1,0 +1,132 @@
+.enquire-record-wrapper{
+  width: 100%;
+  overflow-y: auto;
+  .no-record{
+    width: 100px;
+    color: #aaa;
+    text-align: center;
+    margin: 20px auto;
+  }
+  .record-wrapper{
+    width: 100%;
+    height: 100%;
+    .record-tip{
+      display: inline-block;
+      width: 100%;
+      height: 40px;
+      line-height: 40px;
+      text-align: center;
+    }
+    .record-tip-fixed{
+      display: inline-block;
+      width: 100%;
+      height: 40px;
+      line-height: 40px;
+      text-align: center;
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      z-index: 10;
+      background-color: #f4f6f7;
+    }
+    .record-container{
+      height: 100%;
+      width: 100%;
+      padding-bottom: 40px;
+      .record-item{
+        width: 96%;
+        margin: 0px auto 10px;
+        background-color: #fff;
+        border-radius: 4px;
+        padding-left: 10px;
+        padding-right: 10px;
+        .record-head{
+          height: 60px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border-bottom: 1px solid #eee;
+          .head-left{
+            display: flex;
+            height: 100%;
+            align-items: center;
+            .left-icon{
+              width: 30px;
+              height: 30px;
+              margin-right: 4px;
+            }
+            .right{
+              display: flex;
+              flex-direction: column;
+              .right-top {
+                height: 40px;
+                line-height: 40px;
+                display: block;
+                font-size: 24px;
+                color: #999;
+              }
+              .right-bottom{
+                height: 20px;
+                line-height: 20px;
+                font-size: 10px;
+                color: #ccc;
+              }
+            }
+
+          }
+          .head-right{
+            color: #f00;
+            font-size: 24px;
+          }
+        }
+        .jq-total{
+          height: 40px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid #ccc;
+        }
+        .ci-container{
+          .ci-total{
+            height: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ccc;
+            .discount{
+              margin-left: 10px;
+              color: #ccc;
+              .discount-num{
+                color: #f00;
+                margin-left: 2px;
+              }
+            }
+          }
+          .coverage-list{
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            .deductible{
+              display: inline-block;
+              height: 24px;
+              border: 1px solid #108ee9;
+              color: #108ee9;
+              font-size: 10px;
+              padding-left: 4px;
+              padding-right: 4px;
+              border-radius: 10px;
+              margin-left: 5px;
+            }
+          }
+        }
+        .foot-container{
+          height: 60px;
+          line-height: 60px;
+          text-align: right;
+          border-top: 1px solid #eee;
+        }
+      }
+    }
+  }
+}

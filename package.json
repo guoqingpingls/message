@@ -48,6 +48,8 @@
     "webpack-dev-server": "^2.11.2"
   },
   "dependencies": {
+    "axios": "^0.18.0",
+    "dayjs": "^1.8.0",
     "less": "^3.8.1",
     "less-loader": "^4.1.0",
     "serve": "^6.5.3",

@@ -1,4 +1,5 @@
 import React from 'react';
+import axios from 'axios';
 import { Tabs, Modal, message, Menu, Dropdown, Icon, Avatar, Upload, Radio } from 'antd';
 import ChatImageList from './ChatImageList';
 import BaseInfo from './BaseInfo';
@@ -9,6 +10,7 @@ import QueryInfo from './QueryInfo';
 import Message from './Message';
 import PayType from './PayType';
 import AbOperate from './AbOperate';
+import EnquireRecord from './EnquireRecord';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import MpModal from '../components/MpModal';
@@ -16,7 +18,8 @@ import qs from 'query-string';
 import { Scrollbars } from 'react-custom-scrollbars';
 import CheckModal from './CheckModal';
 import SubmitPrice from './SubmitPrice';
-import { openNavUrl } from '../util/util.js';
+import GeneratePolicy from './GeneratePolicy';
+import { openNavUrl, date, translateIdToName } from '../util/util.js';
 import {
     get_price_detail, //获取询价基本信息
     get_message_list, //获取消息列表
@@ -79,6 +82,7 @@ export default class Index extends React.Component{
       isFirstGet: true, // 获取保险公司列表只需要获取一次
       allInsuranceCp: [],   // 当前商户的保险公司列表
       isShowToast: false,   // 是否显示提示
+      recordList: [],  // 报价记录
     };
   }
   componentDidMount () {
@@ -179,7 +183,27 @@ export default class Index extends React.Component{
         btnText: '确认报价'
       })
     }
-
+    // 发送支付方式
+    if (status === 23 && item.buttonstatus === -2) {
+      btnArray.push({
+        btnClassName: 'message-btn-default btn-can-click',
+        btnText: '发送支付方式'
+      })
+    }
+    // 业务员已缴费并生成保单
+    if (status === 37 && item.buttonstatus === -3) {
+      btnArray.push({
+        btnClassName: 'message-btn-default btn-can-click',
+        btnText: '业务员已缴费并生成保单'
+      })
+    }
+    // 完成保单
+    if (status === 40 && item.buttonstatus === 3) {
+      btnArray.push({
+        btnClassName: 'message-btn-default btn-can-click',
+        btnText: '完成保单'
+      })
+    }
     return btnArray;
   }
   // 回复消息
@@ -248,15 +272,7 @@ export default class Index extends React.Component{
       isShowAbnormal: false
     })
   }
-  // buttonStatus 1-6
-  /**
-   * 1.确认缴费
-   * 2.生成保单
-   * 3.完成保单
-   * 4.已确认收到
-   * 5.保单已生成
-   * 6.保单已完成
-   */
+  // 消息列表button操作
   operateFrom = (item) => {
     let self = this;
     let btnStatus = item.buttonstatus;
@@ -283,90 +299,58 @@ export default class Index extends React.Component{
         onCancel() {}
       });
     }
-    // if (btnStatus < -3 || btnStatus > 3) {
-    //   message.info('当前状态下不可操作！！！')
-    //   return;
-    // } else if (baseInfo.status === 23 && btnStatus === -2) {
-    //   this.showPayType()
-    // } else if (baseInfo.status === 37 && btnStatus === -3) {
-    //   //付款弹窗---------------------//替客户操作
-    //   confirm({
-    //     title: '该操作仅当是业务员没有按照标准流程操作，您替业务员完成的一些行为，您确认要替业务员进行操作么？（例如：业务员在微信做了支付了，在微信确认报价了...）',
-    //     okText: "确认",
-    //     cancelText: "取消",
-    //     onOk() {
-    //       self.setState({
-    //         isShowModal: true
-    //       });
-    //     },
-    //     onCancel() {}
-    //   });
-    // } else if (baseInfo.status === 2 && btnStatus === -1) {
-    //   confirm({
-    //     title: '该操作仅当是业务员没有按照标准流程操作，您替业务员完成的一些行为，您确认要替业务员进行操作么？（例如：业务员在微信做了支付了，在微信确认报价了...）',
-    //     okText: "确认",
-    //     cancelText: "取消",
-    //     onOk() {
-    //       //确认报价---------------------//替客户操作
-    //       let params = {
-    //         priceid: item.priceid,
-    //         priceitemid: item.priceitemid,
-    //         config: item.config,
-    //         id: item.id,
-    //         cid: cid
-    //       }
-    //       confirm_price(params).then((res) => {
-    //         let msgContent = {};
-    //         msgContent.type = "IM";
-    //         msgContent.target = 'C_' + baseInfo.userid;
-    //         msgContent.msg = 'replyContent';
-    //         msgContent.time = Date.now();
-    //         localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
-    //         self.getNodeData();
-    //       }).catch((err) => {
-    //         console.log(err)
-    //       })
-    //     },
-    //     onCancel() {}
-    //   });
-    // } else if (baseInfo.status === 35 && btnStatus === 1) {
-    //   this.setState({
-    //     isShowModal: true
-    //   });
-    // } else if (baseInfo.status === 24 && btnStatus === 2) {
-    //   // 生成保单
-    //   this.setState({
-    //     isShowModal: true
-    //   });
-    // } else if (baseInfo.status === 40 && btnStatus === 3) {
-    //   // 完成保单-------------------------//替客户操作
-    //   // 暂时设定的id
-    //   confirm({
-    //     title: '该操作仅当是业务员没有按照标准流程操作，您替业务员完成的一些行为，您确认要替业务员进行操作么？（例如：业务员在微信做了支付了，在微信确认报价了...）',
-    //     okText: "确认",
-    //     cancelText: "取消",
-    //     onOk() {
-    //       finish_policy(priceId, cid).then((res) => {
-    //         console.log(pageName, ' res ', res)
-    //         let msgContent = {};
-    //         msgContent.type = "IM";
-    //         msgContent.target = 'C_' + baseInfo.userid;
-    //         msgContent.msg = 'replyContent';
-    //         msgContent.time = Date.now();
-    //         localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
-    //         self.getNodeData();
-    //       }, (err) => {
-    //         console.log(pageName, ' error ', err)
-    //       }).catch((err) => {
-    //         console.log(pageName, ' catch error ', err)
-    //       })
-    //     },
-    //     onCancel() {}
-    //   });
-    // } else {
-    //   message.info('当前状态下不可操作！！！')
-    // }
+    // 发送支付方式
+    if (baseInfo.status === 23 && item.buttonstatus === -2) {
+      this.setState({
+        isShowPayType: true
+      })
+    }
+    // 业务员已缴费并生成保单  付款弹窗
+    if (baseInfo.status === 37 && item.buttonstatus === -3) {
+      confirm({
+        title: '该操作仅当是业务员没有按照标准流程操作，您替业务员完成的一些行为，您确认要替业务员进行操作么？（例如：业务员在微信做了支付了，在微信确认报价了...）',
+        okText: "确认",
+        cancelText: "取消",
+        onOk() {
+          self.setState({
+            isShowModal: true
+          });
+        },
+        onCancel() {}
+      });
+    }
+    // 完成保单
+    if (baseInfo.status === 40 && item.buttonstatus === 3) {
+      confirm({
+        title: '该操作仅当是业务员没有按照标准流程操作，您替业务员完成的一些行为，您确认要替业务员进行操作么？（例如：业务员在微信做了支付了，在微信确认报价了...）',
+        okText: "确认",
+        cancelText: "取消",
+        onOk() {
+          self.finishOrder()
+        },
+        onCancel() {}
+      });
+    }
   };
+  finishOrder = () => {
+    let {priceId, cid, baseInfo} = this.state;
+    let self = this;
+    finish_policy(priceId, cid).then((res) => {
+      let msgContent = {};
+      msgContent.type = "IM";
+      msgContent.target = 'C_' + baseInfo.userid;
+      msgContent.msg = 'replyContent';
+      msgContent.time = Date.now();
+      localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
+      // self.getNodeData();
+      self.getMessageList();
+      self.getPriceDetail()
+    }, (err) => {
+      console.log(pageName, ' error ', err)
+    }).catch((err) => {
+      console.log(pageName, ' catch error ', err)
+    })
+  }
   confirmPrice = (item) => {
     let {cid, baseInfo} = this.state;
     let params = {
@@ -390,10 +374,15 @@ export default class Index extends React.Component{
       console.log(err)
     })
   }
-  showPayType = () => {
+  // 关闭发送支付方式弹窗
+  closePayType = (type) => {
     this.setState({
-      isShowPayType: true
+      isShowPayType: false
     })
+    if (type && type === 1) {
+      this.getMessageList();
+      this.getPriceDetail();
+    }
   }
   // 抢单
   robPrice = () => {
@@ -423,18 +412,9 @@ export default class Index extends React.Component{
   }
   // 显示报价弹窗
   openInsertModal = () => {
-    let {baseInfo} = this.state;
-    if (Number(baseInfo.status) === 1 || Number(baseInfo.status) === 2) {
-      this.setState({
-        isShowSubmit: true
-      })
-    } else {
-      message.config({
-        top: 580,
-        duration: 2
-      })
-      message.info('当前订单不可报价', 2);
-    }
+    this.setState({
+      isShowSubmit: true
+    })
   };
   // 关闭报价弹窗
   closeSumitPriceModal = (type) => {
@@ -473,6 +453,84 @@ export default class Index extends React.Component{
       console.log('cpList: ', err)
     })
   };
+  closeGeneratePolicy = (type) => {
+    this.setState({
+      isShowModal: false
+    })
+    if (type) {
+      this.getMessageList()
+      this.getPriceDetail()
+    }
+  }
+  // 获取报价记录
+  queryInsuredPrice = () => {
+    let {baseInfo} = this.state;
+    let params = {
+        LicenseNo: baseInfo.licenseNo,
+        QueryType: 0,
+        InsName: '',
+        PartnerId: baseInfo.partnerId,
+        PriceType: 2,
+        addStartTime: date().add(-3, 'd').format('YYYY-MM-DD'),
+        addEndTime: date().format('YYYY-MM-DD hh:mm:ss'),
+        Paging: {
+          TakeCount: 10,
+          SkipCount: 0
+        }
+    }
+    let self = this;
+    axios({
+      method: 'post',
+      url: 'http://insuredapi.youbaolian.cn/api/insured?action=QueryInsuredPrice',
+      // url: 'http://mock-insuredapi.youbaolian.cn/api/insured?action=QueryInsuredPrice',
+      data: JSON.stringify(params)
+    }).then(({data}) => {
+      if (data.ResultCode === 0 && data.data && data.data.length) {
+        let list =  []
+        data.data.map((item) => {
+          if (item.UpdateTime > date().add(-3, 'd').format('YYYY-MM-DD') && item.data && item.data.length) {
+            item.data.map((ite) => {
+              let coverageList = ite.data.map((tmp) => {
+                return ({
+                  DetailId: tmp.DetailId,
+                  InsuredPremium: tmp.InsuredPremium,
+                  name: translateIdToName(tmp.DetailId)
+                })
+              })
+              list.push({
+                UpdateTime: ite.UpdateTime.slice(0, 10),
+                PriceItemId: ite.PriceItemId,
+                BIDiscount: ite.BIDiscount,
+                BIPremium: ite.BIPremium,
+                CIPremium: ite.CIPremium,
+                CarshipTax: ite.CarshipTax,
+                SupplierName: ite.SupplierName,
+                TotalPrice: ite.TotalPrice,
+                SupplierId: ite.SupplierId,
+                coverageList: coverageList,
+                CICarTotal: ite.CIPremium + ite.CarshipTax
+              })
+            })
+          }
+        })
+        console.log(list)
+        self.setState({
+          recordList: list
+        })
+      }
+    })
+  }
+  // 使用此报价
+  usePrice = (info) => {
+    this.state.queryPriceInfo = info;
+    this.openInsertModal();
+  };
+  changeTab = (activeKey) => {
+    // 获取报价记录
+    if (+activeKey === 4) {
+      this.queryInsuredPrice()
+    }
+  }
   render() {
     const {
       refreshData,
@@ -497,7 +555,8 @@ export default class Index extends React.Component{
       cid,
       isShowRobTip,
       fromRecord,
-      isShowToast
+      isShowToast,
+      recordList
     } = this.state;
     return (
       <div className='content-wrapper'>
@@ -512,7 +571,7 @@ export default class Index extends React.Component{
             <Footer ref='footer' openInsertModal={this.openInsertModal} baseInfo={baseInfo} abOperate={this.abOperate} replyRemark={this.replyRemark} alwaysUseReplay={this.alwaysUseReplay} showSendImage={this.showSendImage} keyDown={this.keyDown}/>
           </div>
           <div className='right-container'>
-            <Tabs defaultActiveKey="1">
+            <Tabs defaultActiveKey="1" onChange={this.changeTab}>
               <TabPane tab={<span className='tab-container'><i className='iconfont icon-kehu tab-icon' /><span>基本信息</span></span>} key="1">
                 <BaseInfo showRobModal={this.showRobModal} allInsuranceCp={allInsuranceCp} btnClick={this.btn1Click} baseData={baseInfo} />
               </TabPane>
@@ -522,17 +581,13 @@ export default class Index extends React.Component{
               <TabPane tab={<span className='tab-container'><i className='iconfont icon-tupian-copy tab-icon' /><span>聊天图片</span></span>} key="3">
                 <ChatImageList priceId={priceId} handlePreview={this.handlePreview} allImageList={allImageList} />
               </TabPane>
-              <TabPane tab={<span className='tab-container'><i className='iconfont icon-shizhong tab-icon' /><span>历史报价</span></span>} key="4">
-                {/* <HistoryList status={baseInfo.status} usePrice={this.usePrice} historicalPriceList={historicalPriceList} /> */}
+              <TabPane style={{position: 'relative'}} tab={<span className='tab-container'><i className='iconfont icon-shizhong tab-icon' /><span>报价记录</span></span>} key="4">
+                <EnquireRecord recordList={recordList} usePrice={this.usePrice} />
               </TabPane>
             </Tabs>
           </div>
         </div>
         <SendImage isSendImage={isSendImage} hideSendImage={this.hideSendImage} sendImage={this.sendImage}></SendImage>
-        <FormModal ref='formModal' priceId={priceId} isShowModal={isShowModal} submitForm={this.submitForm}
-          onCancel={this.onCancel} baseData={baseInfo} />
-        {/* <SubmitOffer ref="submitOffer" allInsuranceCp={allInsuranceCp} queryPriceInfo={queryPriceInfo} priceId={priceId} closeSubmit={this.closeSubmit} isShowSubmit={isShowSubmit}
-          baseData={baseInfo} getPrice={this.getPrice} changesupplierIdToName={this.changesupplierIdToName} refreshData={refreshData} /> */}
         <div className='info-modal' style={{ display: previewVisible ? 'block' : 'none' }} onClick={this.hideCheckModal}>
           <CheckModal getEnquireDetail={this.getEnquireDetail} hideCheckModal={this.hideCheckModal} priceId={priceId} imageSrc={previewImage} imagesInArr={imagesInArr} baseInfo={baseInfo}/>
         </div>
@@ -547,7 +602,7 @@ export default class Index extends React.Component{
           ? <PayType
             title="支付方式"
             closePayType={this.closePayType}
-            sendPayType={this.sendPayType}
+            // sendPayType={this.sendPayType}
             defaultImageUri={defaultImageUri}
             priceId={priceId}
             cid={cid}
@@ -565,12 +620,18 @@ export default class Index extends React.Component{
           ? <SubmitPrice
               priceId={priceId}
               baseInfo={baseInfo}
+              queryPriceInfo={queryPriceInfo}
               fromRecord={fromRecord}
               allInsuranceCp={allInsuranceCp}
               getMessageList={this.getMessageList}
               getPriceDetail={this.getPriceDetail}
               closeSumitPriceModal={this.closeSumitPriceModal}
             />
+          : null
+        }
+        {
+          isShowModal
+          ? <GeneratePolicy baseInfo={baseInfo} close={this.closeGeneratePolicy} priceId={priceId}/>
           : null
         }
         <Modal title="接单提示"

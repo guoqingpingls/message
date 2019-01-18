@@ -35,12 +35,47 @@ export default class SubmitPrice extends React.Component{
       previewImage: '',   // 预览图片
       previewVisible: false,    // 显示预览modal
       isShowToast: false,     // 是否显示商业险 !== 明细和 的提示
+      recordId: null
     }
   }
   componentDidMount () {
     this.getCoverageList();
     this.formateCoverageList()
     this.getPriceInfo();
+    this.dealRecordData()
+  }
+  // 处理报价记录过来的数据
+  dealRecordData = () => {
+    console.log('deal record data')
+    let {totalList} = this.state;
+    let {queryPriceInfo} = this.props;
+    this.state.cipremium = queryPriceInfo.CIPremium || 0
+    this.state.bipremium = queryPriceInfo.BIPremium || 0
+    this.state.carshiptax = queryPriceInfo.CarshipTax || 0 
+    this.state.supplierId = queryPriceInfo.SupplierId || 0 
+    this.state.totalpremium = Number(this.state.cipremium) + Number(this.state.bipremium) + Number(this.state.carshiptax)
+    let infoDetailIdList = queryPriceInfo.coverageList.map((item) => {
+      return item.DetailId
+    })
+    let checkedItem;
+    let newList;
+    if (totalList && totalList.length) {
+        newList = totalList.map((item) => {
+          if (infoDetailIdList.indexOf(Number(item.InsDetailId)) > -1) {
+            checkedItem = queryPriceInfo.coverageList.filter(ite => {
+              return ite.DetailId === Number(item.InsDetailId)
+            })
+            item.InsuredPremium = checkedItem[0].InsuredPremium
+          }
+          return item;
+        })
+    }
+    this.setState({
+      fromRecord: true,
+      recordId: queryPriceInfo.SupplierId,
+      checkStatus: true,
+      totalList: newList
+    })
   }
   // 提交报价
   submit = () => {
@@ -146,7 +181,7 @@ export default class SubmitPrice extends React.Component{
   }
   // 保险公司改变
   dealChange = (value) => {
-    this.setState({defaultValue:value})
+    this.setState({defaultValue:value, recordId: null})
     this.state.supplierId = Number(value);
     this.getPriceInfo();
   }
@@ -314,7 +349,6 @@ export default class SubmitPrice extends React.Component{
         feeTitle: '商业保费',
         rebateTitle: '商业保费返佣点位',
         commissionTitle: '商业佣金',
-        // beginDateTitle: '起保日期'
       })
     }
     console.log(tmpCoverage)
@@ -512,7 +546,8 @@ export default class SubmitPrice extends React.Component{
       previewImage,
       previewVisible,
       fileList,
-      isShowToast
+      isShowToast,
+      recordId
     } = this.state;
     let {fromRecord, allInsuranceCp} = this.props
     const uploadButton = (
@@ -539,7 +574,7 @@ export default class SubmitPrice extends React.Component{
                   style={{ width: 200 }}
                   placeholder="请选择投保的保险公司"
                   optionFilterProp="children"
-                  value={defaultValue || '请选择投保的保险公司'}
+                  value={recordId || defaultValue || '请选择投保的保险公司'}
                   onChange={this.dealChange}
                   onFocus={this.handleFocus}
                   onBlur={this.handleBlur}
@@ -559,7 +594,7 @@ export default class SubmitPrice extends React.Component{
                     style={{ width: 200 }}
                     placeholder="请选择投保的保险公司"
                     optionFilterProp="children"
-                    value={defaultValue || '请选择投保的保险公司'}
+                    value={recordId || defaultValue || '请选择投保的保险公司'}
                     onChange={this.dealChange}
                     onFocus={this.handleFocus}
                     onBlur={this.handleBlur}

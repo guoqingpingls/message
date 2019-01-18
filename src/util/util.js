@@ -1,5 +1,6 @@
 
 import dataSource from './dataSource';
+import dayjs from 'dayjs';
 // 险种显示
 function insuranceInString (code) {
     switch(code) {
@@ -156,6 +157,25 @@ function openNavUrl(_url, title) {
         window.open(url);
     }
 };
+/**
+ * 日期转换（当value为空时返回的是当天的日期）
+ * @param {日期值} value
+ */
+function date(value) {
+    value = value === '0001-01-01T00:00:00' ? '' : value
+    return (value && dayjs(value)) || dayjs()
+}
+// formate date
+function dateF (value, format = 'YYYY-MM-DD') {
+  return date(value).format(format)
+}
+function factory (value, source) {
+  return (value !== undefined && source.find(c => +c.value === +value) && source.find(c => +c.value === +value).label) || value
+}
+// 保司id -> 保司 name
+function translateIdToName (value) {
+  return factory(value, dataSource.coverageList)
+}
 module.exports = {
     insuranceInString,
     changesupplierIdToName,
@@ -163,5 +183,8 @@ module.exports = {
     filterInsurance,
     hasCommercialInsurance,
     isEmptyObject,
-    openNavUrl
+    openNavUrl,
+    date,
+    dateF,
+    translateIdToName
 }
