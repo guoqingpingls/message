@@ -331,7 +331,6 @@ export default class SubmitPrice extends React.Component{
         feeTitle: '交强保费',
         rebateTitle: '交强返佣点位',
         commissionTitle: '交强佣金',
-        // beginDateTitle: '起保日期'
       })
       tmpCoverage.push({
         type: 3,
@@ -351,7 +350,6 @@ export default class SubmitPrice extends React.Component{
         commissionTitle: '商业佣金',
       })
     }
-    console.log(tmpCoverage)
     this.setState({
       coverageList: tmpCoverage
     })
