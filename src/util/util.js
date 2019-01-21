@@ -130,7 +130,17 @@ function hasCommercialInsurance (coverageList) {
         return false
     }
 }
-// 对象是否为空
+// 是否含有商业险：仅判断主险
+function isHasCommercial (idList) {
+  // 判断理由: 主险存在
+  let mainList =  [10001, 10002, 10003, 10004, 10005]
+  if (mainList.indexOf(idList[1]) > -1) {
+    return true
+  } else {
+    return false
+  }
+}
+// 对象是否为空 非空 返回true
 function isEmptyObject(obj) {   
 　　for (var key in obj){
 　　　　return true;
@@ -172,7 +182,7 @@ function dateF (value, format = 'YYYY-MM-DD') {
 function factory (value, source) {
   return (value !== undefined && source.find(c => +c.value === +value) && source.find(c => +c.value === +value).label) || value
 }
-// 保司id -> 保司 name
+// 保险项id -> 保险项 name
 function translateIdToName (value) {
   return factory(value, dataSource.coverageList)
 }
@@ -186,5 +196,6 @@ module.exports = {
     openNavUrl,
     date,
     dateF,
-    translateIdToName
+    translateIdToName,
+    isHasCommercial
 }

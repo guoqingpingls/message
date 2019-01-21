@@ -999,7 +999,7 @@ export default class SubmitOffer extends React.Component {
                                                                 return(
                                                                     <li className="item-container" key={index}>
                                                                         {
-                                                                            Number(item.InsDetailId) > 30000
+                                                                           (item.InsDetailId && Number(item.InsDetailId) > 30000) || (item.DetailId && Number(item.DetailId) > 30000)
                                                                             ? <span className='item ins'>{item.ins}不计免赔</span>
                                                                             : <span className='item ins'>{item.ins}{item.Amount ? '(' + Number(item.Amount).toFixed(2) + ')' : ''}</span>
                                                                         }

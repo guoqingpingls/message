@@ -80,9 +80,9 @@ export const reply_remark_api = (params) => {
 }
 // 获取历史报价
 // params: {licenseNo: '京N4Y158'}
-export const get_historical_price = (params) => {
-    return apiHttpRequest('/preprice-ins/inspreprices/historicalPrice?' + params, 'GET');
-}
+// export const get_historical_price = (params) => {
+//     return apiHttpRequest('/preprice-ins/inspreprices/historicalPrice?' + params, 'GET');
+// }
 // 获取出单员列表
 export const get_member_list = (params) => {
     return apiHttpRequest('/preprice-car/partnerconfigs/getPartnerJobNo', 'POST', params)

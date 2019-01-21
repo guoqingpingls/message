@@ -18,7 +18,12 @@ export default class BaseInfo extends React.Component{
         if (nextProps.baseData && nextProps.baseData.coverageList || nextProps.allInsuranceCp !== this.props.allInsuranceCp) {
             // let tmp = JSON.parse(nextProps.baseData.coverageList);
             if (nextProps.baseData.coverageList && nextProps.baseData.coverageList.length > 0) {
-                let tmpCoverageList = filterInsurance(JSON.parse(nextProps.baseData.coverageList))
+                let tmpCoverageList = []
+                if (typeof nextProps.baseData.coverageList === 'string') {
+                    tmpCoverageList = filterInsurance(JSON.parse(nextProps.baseData.coverageList))
+                } else {
+                    tmpCoverageList = filterInsurance(nextProps.baseData.coverageList)
+                }
                 this.setState({
                     coverageList: tmpCoverageList,
                 })

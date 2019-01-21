@@ -29,7 +29,7 @@ import {
     finish_policy,   // 完成保单
     submit_to_get_price,    // 提交报价
     reply_remark_api,    // 回复
-    get_historical_price,    // 获取历史报价
+    // get_historical_price,    // 获取历史报价
     get_insurance_cp_list,      //获取保险公司列表
     transfer_search,    //转接查询
     transfer_to_others,         // 转接
@@ -417,7 +417,7 @@ export default class Index extends React.Component{
     })
   };
   // 关闭报价弹窗
-  closeSumitPriceModal = (type) => {
+  closeSubmitPriceModal = (type) => {
     this.setState({
       isShowSubmit: false
     })
@@ -625,7 +625,7 @@ export default class Index extends React.Component{
               allInsuranceCp={allInsuranceCp}
               getMessageList={this.getMessageList}
               getPriceDetail={this.getPriceDetail}
-              closeSumitPriceModal={this.closeSumitPriceModal}
+              closeSubmitPriceModal={this.closeSubmitPriceModal}
             />
           : null
         }

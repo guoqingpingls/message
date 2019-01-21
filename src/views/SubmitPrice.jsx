@@ -1,14 +1,19 @@
 import React from 'react';
 import MpModal from '../components/MpModal.jsx';
-import {Switch, Select, Icon, Upload, Modal, Button } from 'antd';
+import {Switch, Select, Icon, Upload, Modal, Button, message } from 'antd';
 import '../stylesheets/SubmitPrice.less';
-const { hasCommercialInsurance, isEmptyObject, filterInsurance } = require('../util/util.js');
+const { hasCommercialInsurance, isEmptyObject, filterInsurance, isHasCommercial, translateIdToName } = require('../util/util.js');
 const Option = Select.Option;
 import {
   get_price_info,
   submit_to_get_price
 } from '../services/index';
+import { type } from 'os';
 export default class SubmitPrice extends React.Component{
+  // 数据三个来源
+  // baseInfo 基础数据 渲染ui 无填充
+  // queryInfo 报价记录数据  渲染ui 有填充
+  // renewalInfo  续保数据 渲染ui  有填充
   constructor (props) {
     super(props);
     this.state = {
@@ -35,46 +40,159 @@ export default class SubmitPrice extends React.Component{
       previewImage: '',   // 预览图片
       previewVisible: false,    // 显示预览modal
       isShowToast: false,     // 是否显示商业险 !== 明细和 的提示
-      recordId: null
+      recordId: null,
+
+      commercialItems: [],    // 保险项目
+      info: {},   // baseInfo queryInfo renewalInfo
+      dataType: 0, // 0 baseInfo, 1 queryInfo, 2 renewalInfo
     }
   }
   componentDidMount () {
-    this.getCoverageList();
-    this.formateCoverageList()
-    this.getPriceInfo();
-    this.dealRecordData()
+    let { baseInfo, queryPriceInfo } = this.props;
+    if (isEmptyObject(queryPriceInfo)) {
+      this.state.dataType = 1
+      this.state.recordId = queryPriceInfo.SupplierId;
+      this.dealBaseData(queryPriceInfo, true)
+    } else {
+      this.dealBaseData(baseInfo, false)
+    }
   }
-  // 处理报价记录过来的数据
-  dealRecordData = () => {
-    console.log('deal record data')
-    let {totalList} = this.state;
-    let {queryPriceInfo} = this.props;
-    this.state.cipremium = queryPriceInfo.CIPremium || 0
-    this.state.bipremium = queryPriceInfo.BIPremium || 0
-    this.state.carshiptax = queryPriceInfo.CarshipTax || 0 
-    this.state.supplierId = queryPriceInfo.SupplierId || 0 
-    this.state.totalpremium = Number(this.state.cipremium) + Number(this.state.bipremium) + Number(this.state.carshiptax)
-    let infoDetailIdList = queryPriceInfo.coverageList.map((item) => {
-      return item.DetailId
+  // 获取保险项id
+  getCoverageIds = (list) => {
+    let InsDetailIdList = list.map((item) => {
+      if (item.DetailId) {
+        return +item.DetailId
+      } else if (item.InsDetailId) {
+        return +item.InsDetailId
+      }
     })
-    let checkedItem;
-    let newList;
-    if (totalList && totalList.length) {
-        newList = totalList.map((item) => {
-          if (infoDetailIdList.indexOf(Number(item.InsDetailId)) > -1) {
-            checkedItem = queryPriceInfo.coverageList.filter(ite => {
-              return ite.DetailId === Number(item.InsDetailId)
-            })
-            item.InsuredPremium = checkedItem[0].InsuredPremium
-          }
-          return item;
+    return InsDetailIdList
+  }
+  // 获取保险项
+  getCoverageItems = (InsDetailIdList, isFill) =>　{
+    let {info} = this.state;
+    let items = []
+    if (InsDetailIdList.indexOf(10501) > -1) {
+      items.push({
+        type: 1,
+        feeTitle: '交强保费',
+        rebateTitle: '交强返佣点位',
+        commissionTitle: '交强佣金',
+      },
+      {
+        type: 3,
+        feeTitle: '车船税保费',
+        rebateTitle: '车船税返佣点位',
+        commissionTitle: '车船税佣金'
+      })
+    }
+    if (isHasCommercial(InsDetailIdList)) {
+      this.state.isHasBi = true
+      items.push({
+        type: 2,
+        feeTitle: '商业保费',
+        rebateTitle: '商业保费返佣点位',
+        commissionTitle: '商业佣金',
+      })
+    }
+    if (isFill) {
+      // 数据填充
+      //  queryInfo BIPremium  BICommission  CIPremium  CICommission ShowBICommission  ShowCICommission  CarshipTax  还差 showcarshiptax carshipCommission 
+      //renewalInfo biPremium  biCommission  ciPremium  ciCommission showbicommission  showcicommission  carshiptax  showcarshiptax  carshipCommission
+      this.state.cipremium = info.ciPremium || info.CIPremium || 0;
+      this.state.showcicommission = info.showcicommission || info.ShowCICommission || 0;
+      this.state.ciCommission = info.ciCommission || info.CICommission || 0;
+      this.state.bipremium = info.biPremium || info.BIPremium || 0;
+      this.state.showbicommission = info.showbicommission || info.ShowBICommission || 0;
+      this.state.biCommission = info.biCommission || info.BICommission || 0;
+      this.state.carshiptax = info.carshiptax || info.CarshipTax || 0;
+      this.state.showcarshiptax = info.showcarshiptax || 0;
+      this.state.carshipCommission = info.carshipCommission || 0;
+      this.calculateResult();
+    }
+    return items;
+  }
+  // 获取商业险明细
+  getBIDetail = (list, isFill) => {
+    let {dataType} = this.state;
+    let result = []
+    if (list.length) {
+      list.map((item) => {
+        // renewalInfo: DetailId　　　InsuredAmount　　InsuredPremium      Flag
+        // baseInfo   : InsDetailId  Amount                               flag
+        // queryInfo  ：DetailId　　　InsuredAmount　　InsuredPremium      Flag
+        let id = dataType === 0 ? item.InsDetailId : item.DetailId
+        let amount = dataType === 0 ? item.Amount : item.InsuredAmount
+        let InsuredPremium = dataType === 0 ? 0 : item.InsuredPremium
+        let flag = dataType === dataType === 0 ? item.flag : item.Flag
+        if (+id === 20201) {
+          result.push({
+            ins: translateIdToName(id),
+            InsDetailId: id,
+            Amount: amount,
+            InsuredPremium: item.InsuredPremium || 0,
+            flag: item.flag
+          })
+        }
+        if (+id !== 10501 &&  +id !== 20201) {
+          result.push({
+            ins: translateIdToName(id),
+            InsDetailId: id,
+            Amount: amount,
+            InsuredPremium: item.InsuredPremium || 0,
+          })
+        }
+      })
+    }
+    return result;
+  }
+  dealUntreatedData = (list) => {
+    let newList = []
+    list.map((item) => {
+      if (item.IsNotDeductible) {
+        newList.push({
+          DetailId: +item.InsDetailId < 20000 ? +item.InsDetailId + 20000 : +item.InsDetailId + 10000,
+          InsuredPremium: item.NcfPremium,
+          InsuredAmount: 0,
         })
+      }
+      newList.push({
+        DetailId: item.InsDetailId,
+        InsuredPremium: item.InsuredPremium,
+        InsuredAmount: item.Amount,
+        Flag: item.Flag
+      })
+    })
+    return newList
+  }
+  // 处理baseInfo数据
+  dealBaseData = (info, isFill, isChangeInsurance) => {
+    // 获取保险项
+    // 如果有queryInfo renewalInfo baseInfo 
+    if (info.coverageList && typeof info.coverageList === 'string') {
+      info.coverageList = JSON.parse(info.coverageList)
+    }
+    this.state.info = info
+    let tmpList = info.coverageList || []
+    if (tmpList.length === 0) {
+      return;
+    }
+    // 如果是未处理的数据
+    if (isChangeInsurance) {
+      tmpList = this.dealUntreatedData(tmpList)
+    }
+    // 获取保险公司id列表
+    let InsDetailIdList = this.getCoverageIds(tmpList).sort();
+    // 获取保险项
+    let items = this.getCoverageItems(InsDetailIdList, isFill)
+    // 有商业险，获取明细
+    let totalList = []
+    if (this.state.isHasBi) {
+      totalList = this.getBIDetail(tmpList, isFill)
     }
     this.setState({
-      fromRecord: true,
-      recordId: queryPriceInfo.SupplierId,
-      checkStatus: true,
-      totalList: newList
+      totalList: totalList,
+      commercialItems: items
     })
   }
   // 提交报价
@@ -143,7 +261,6 @@ export default class SubmitPrice extends React.Component{
       }
     }
     params.coveragelist = JSON.stringify(totalList);
-    // this.props.getPrice(params);
     this.submitPrice(params);
     
   };
@@ -151,7 +268,7 @@ export default class SubmitPrice extends React.Component{
     let self = this;
     let {baseInfo} = this.props;
     submit_to_get_price(params).then((res) => {
-      self.props.closeSumitPriceModal(1) // 关闭弹窗
+      self.props.closeSubmitPriceModal(1) // 关闭弹窗
       // 清空数据
       // self.refreshData()
       self.dealCancel()
@@ -177,7 +294,7 @@ export default class SubmitPrice extends React.Component{
   }
   // 关闭弹窗
   cancel = () => {
-    this.props.closeSumitPriceModal()
+    this.props.closeSubmitPriceModal()
   }
   // 保险公司改变
   dealChange = (value) => {
@@ -193,81 +310,45 @@ export default class SubmitPrice extends React.Component{
     let self = this;
     let params = `priceId=${priceId}&supplierId=${tmpsupplierId}`;
     get_price_info(params).then(res => {
+      console.log(res)
       if (res.returnCode === 2) {
+        this.state.dataType = 2
         if (res.dto) {
-          let info = res.dto;
-          self.state.cipremium = info.ciPremium;
-          self.state.showcicommission = info.showcicommission;
-          self.state.ciCommission = info.ciCommission;
-          self.state.ciBeginDate = info.ciBeginDate;
-          self.state.bipremium = info.biPremium;
-          self.state.showbicommission = info.showbicommission;
-          self.state.biCommission = info.biCommission;
-          self.state.biBeginDate = info.biBeginDate;
-          self.state.carshiptax = info.carshiptax;
-          self.state.showcarshiptax = info.showcarshiptax;
-          self.state.carshipCommission = info.carshipCommission;
-          let {
-            cipremium,
-            showcicommission,
-            ciCommission,
-            bipremium,
-            showbicommission,
-            biCommission,
-            carshiptax,
-            showcarshiptax,
-            carshipCommission
-          } = self.state;
-          let tmptotalpremium = Number(cipremium) + Number(bipremium) + Number(carshiptax);
-          let tmpcommission = Number(ciCommission) + Number(biCommission) + Number(carshipCommission);
-          let tmppureFee = tmptotalpremium - tmpcommission;
-          let tmp = Number(cipremium) + Number(bipremium);
-          let tmpcomprehensivePoint = 0
-          if (tmp > 0) {
-            tmpcomprehensivePoint = tmpcommission / tmp * 100;
-          }
-          self.setState({
-            totalpremium: Math.round(tmptotalpremium * 100) / 100,
-            commission: Math.round(tmpcommission * 100) / 100,
-            pureFee: Math.round(tmppureFee * 100) / 100,
-            comprehensivePoint: Math.round(tmpcomprehensivePoint * 100) / 100
-          })
-          // 险种详情
-          let coverageList = info.coverageList
-          this.getCoverageList(coverageList);
-          self.formateCoverageList(coverageList)
+          self.dealBaseData(res.dto, true, true)
         } else {
-          let tmp = JSON.parse(baseInfo.coverageList)
-          let addtionTmp = []
-          let mainTmp = []
-          let result = [];
-          // 保费置零
-          tmp && tmp.length && tmp.map((item) => {
-            if (item.InsDetailId != 10501) {
-              item.InsuredPremium = 0;
-              result.push(item)
-            }
-          })
-          self.setState({
-            totalList: result,
-            additionList: addtionTmp,
-            mainList: mainTmp,
-            cipremium: 0,
-            bipremium: 0,
-            showcicommission: 0,
-            showbicommission: 0,
-            commission: 0,
-            carshiptax: 0,
-            showcarshiptax: 0,
-            ciCommission: 0,
-            biCommission: 0,
-            carshipCommission: 0
-          })
-          self.getCoverageList();
-          this.calculateResult();
+          self.resetData()
         }
       }
     })
+  }
+  // // 数据置零
+  resetData = () => {
+    let {totalList} = this.state;
+    // 商业险保费置0
+    let result = []
+    result = totalList.length && totalList.map((item) => {
+      if (item.InsDetailId != 10501) {
+        item.InsuredPremium = 0;
+        result.push(item)
+      }
+    })
+    this.setState({
+      cipremium: 0,
+      bipremium: 0,
+      showcicommission: 0,
+      showbicommission: 0,
+      carshiptax: 0,
+      showcarshiptax: 0,
+      ciCommission: 0,
+      biCommission: 0,
+      carshipCommission: 0,
+      commission: 0,
+      totalpremium: 0,
+      pureFee: 0,
+      comprehensivePoint: 0,
+      totalList: result
+    })
+    
   }
   // 计算各项值
   // 价税分离时计算公式如下：
@@ -309,110 +390,12 @@ export default class SubmitPrice extends React.Component{
       comprehensivePoint: Math.round(tmpcomprehensivePoint * 100) / 100,
     })
   }
-  getCoverageList = (list) => {
-    let tmpCoverageList
-    let tmpCoverage = []
-    let {baseInfo} = this.props;
-    // 传入list || baseInfo里面的list
-    if (list && list.length > 0) {
-      tmpCoverageList = JSON.parse(list);
-    } else {
-      if (!baseInfo.coverageList || baseInfo.coverageList.length === 0) {
-        return;
-      }
-      tmpCoverageList = JSON.parse(baseInfo.coverageList);
-    }
-    let tmpInsDetailId = tmpCoverageList.length && tmpCoverageList.map((item, index) => {
-      return Number(item.InsDetailId);
-    })
-    if (tmpInsDetailId.indexOf(10501) > -1) {
-      tmpCoverage.push({
-        type: 1,
-        feeTitle: '交强保费',
-        rebateTitle: '交强返佣点位',
-        commissionTitle: '交强佣金',
-      })
-      tmpCoverage.push({
-        type: 3,
-        feeTitle: '车船税保费',
-        rebateTitle: '车船税返佣点位',
-        commissionTitle: '车船税佣金'
-      })
-    }
-    if (hasCommercialInsurance(tmpCoverageList)) {
-      this.setState({
-        isHasBi: true
-      })
-      tmpCoverage.push({
-        type: 2,
-        feeTitle: '商业保费',
-        rebateTitle: '商业保费返佣点位',
-        commissionTitle: '商业佣金',
-      })
-    }
-    this.setState({
-      coverageList: tmpCoverage
-    })
-  }
   // 是否显示商业险明细
   toggleDetailShow = () => {
     let { isShowDetail } = this.state;
     this.setState({
         isShowDetail: !isShowDetail
     })
-  }
-  // 获取商业险明细
-  formateCoverageList (list) {
-    let tmpList = []
-    // if (list && list.length === 0) {
-    //   return;
-    // }
-    let {baseInfo} = this.state;
-    if (list && list.length !== 0) {
-      tmpList = list
-    } else if (baseInfo && baseInfo.coverageList) {
-      tmpList = baseInfo.coverageList;
-    } else {
-      return;
-    }
-    let tmp = JSON.parse(tmpList)
-    let addtionTmp = []
-    let mainTmp = []
-    let InsDetailIdList = tmp.map((item, index) => {
-      return Number(item.InsDetailId)
-    })
-    let formateTmp = [];
-    tmp.map((item) => {
-      if (item.InsDetailId == 10501) {
-        return;
-      }
-      item.ins = this.formCoverageName(item.InsDetailId);
-      if (item.InsDetailId == 20201) {
-        formateTmp.push({
-          ins: this.formCoverageName(item.InsDetailId),
-          InsDetailId: item.InsDetailId,
-          Amount: item.Amount,
-          InsuredPremium: item.InsuredPremium,
-          flag: item.flag
-        })
-      } else {
-        formateTmp.push({
-          ins: this.formCoverageName(item.InsDetailId),
-          InsDetailId: item.InsDetailId,
-          Amount: item.Amount,
-          InsuredPremium: item.InsuredPremium
-        })
-      }
-    })
-    let result = formateTmp.filter((item) => {
-      return Number(item.InsDetailId) !== 10501
-    })
-    this.setState({
-      totalList: result,
-      additionList: addtionTmp,
-      mainList: mainTmp 
-    })
-
   }
   // 上传图片
   handlePreview = (file) => {
@@ -545,7 +528,9 @@ export default class SubmitPrice extends React.Component{
       previewVisible,
       fileList,
       isShowToast,
-      recordId
+      recordId,
+      commercialItems,    // 保险项list
+
     } = this.state;
     let {fromRecord, allInsuranceCp} = this.props
     const uploadButton = (
@@ -611,7 +596,7 @@ export default class SubmitPrice extends React.Component{
             </div>
             <ul className='coverage-list-container'>
               {
-                coverageList && coverageList.length && coverageList.map((item, index) => {
+                commercialItems && commercialItems.length && commercialItems.map((item, index) => {
                   return (
                     <li className='submit-item-container' key={index}>
                       <div className='item'>
@@ -667,7 +652,7 @@ export default class SubmitPrice extends React.Component{
                                     <li className="insurance-item-container" key={index}>
                                       {
                                         Number(item.InsDetailId) > 30000
-                                        ? <span className=''>{item.ins}不计免赔</span>
+                                        ? <span className=''>{item.ins}-不计免赔</span>
                                         : <span className=''>{item.ins}{item.Amount ? '(' + Number(item.Amount).toFixed(2) + ')' : ''}</span>
                                       }
                                       <input
