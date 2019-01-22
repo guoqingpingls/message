@@ -1,13 +1,21 @@
 import React from 'react';
+import axios from 'axios';
 import '../stylesheets/Footer.less';
+import {isEmptyObject} from '../util/util.js';
 import { Dropdown, Menu, Icon } from 'antd';
 import tip from '../assets/images/tip.png';
 import sendImage from '../assets/images/send-image.png';
+import operateIcon from '../assets/images/open-operate.png';
+import operateIconActive from '../assets/images/open-operate-active.png';
+import abIcon from '../assets/images/ab-icon.png';
+// import guide from '../assets/images/setting-guide.png';
 export default class Footer extends React.Component {
   constructor (props) {
     super(props);
     this.state = {
       isShift: false,
+      jobnoList: [],
+      isShowOperate: true,    // 显示报价栏
     }
   }
   alwaysUseReplay = () => {
@@ -48,8 +56,58 @@ export default class Footer extends React.Component {
   insertPrice = () => {
     this.props.openInsertModal()
   }
+  // 获取工号 1. 保险公司点击显示 2. 首页显示
+  getJobNo = (insuranceItem) => {
+    let {cid} = this.props
+    let params = `?customerId=${cid}`
+    let isInsurance = false
+    if (insuranceItem && isEmptyObject(insuranceItem)) {
+      isInsurance = true
+      params = `${params}&supplierId=${insuranceItem.id}&all=1`
+    }
+    axios({
+      method: 'get',
+      url: `http://insbak.ananyun.net/zongan/GetSettingJobNos${params}`
+      // url: `http://pre2.insbak.ananyun.net/zongan/GetSettingJobNos${params}`
+    }).then(({data}) => {
+      if (data.ResultCode === 1 && data.jobNos && data.jobNos.length) {
+        let  jobnoList = data.jobNos.map((item) => {
+          if (isInsurance) {
+            return ({
+              id: item.SupplierId,
+              name: item.Remark && item.Remark.length ? `${item.Remark}-${item.LoginName}` : item.LoginName,
+              icon: `http://f2.ananyun.net/BakSite/Resources/img/logo/small/${item.SupplierId}.jpg`,
+              PartnerId: item.PartnerId,
+              jobnoid: item.JobNOId
+            })
+          } else {
+            let LoginName = item.Remark && item.Remark.length ? `-${item.Remark}-${item.LoginName}` :`-${item.LoginName}`
+            return ({
+              id: item.SupplierId,
+              name: item.Partner.PartnerName + LoginName,
+              icon: `http://f2.ananyun.net/BakSite/Resources/img/logo/small/${item.SupplierId}.jpg`,
+              PartnerId: item.PartnerId,
+              jobnoid: item.JobNOId
+            })
+          }
+        })
+        if (isInsurance) {
+          self.setState({
+            chooseTitle: item.name,
+            isShowJobNo: true,
+            chooseList: jobnoList
+          })
+        } else {
+          self.setState({
+            jobnoList: jobnoList
+          })
+        }
+      }
+    })
+  }
   render () {
     let {baseInfo} = this.props;
+    let {isShowOperate} = this.state;
     const menu = (
       <Menu onClick={this.alwaysUseReplay}>
         <Menu.Item>已收到您的询价，很高兴为你效劳！</Menu.Item>
@@ -66,7 +124,9 @@ export default class Footer extends React.Component {
       <div className='footer-container'>
         <div className='always-container'>
           <div className='left'>
-            <img className='left-icon' src={sendImage} onClick={this.showSendImage} />
+            <img className='left-icon' src={sendImage} onClick={this.showSendImage}></img>
+            <img className='left-icon' src={isShowOperate ? operateIconActive : operateIcon} onClick={this.showOperate}></img>
+            <img className='left-icon' src={abIcon} onClick={this.abOperate}></img>
           </div>
           <Dropdown  overlay={menu} placement="bottomRight">
             <div className='always-use'>

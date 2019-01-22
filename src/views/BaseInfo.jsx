@@ -1,8 +1,7 @@
 import React from 'react';
-import '../stylesheets/BaseInfo.css';
-import { Collapse } from 'antd';
+import '../stylesheets/BaseInfo.less';
+import { Collapse,message } from 'antd';
 const { filterInsurance } = require('../util/util.js');
-
 const Panel = Collapse.Panel;
 
 export default class BaseInfo extends React.Component{
@@ -16,22 +15,12 @@ export default class BaseInfo extends React.Component{
     }
     componentWillReceiveProps (nextProps) {
         if (nextProps.baseData && nextProps.baseData.coverageList || nextProps.allInsuranceCp !== this.props.allInsuranceCp) {
-            // let tmp = JSON.parse(nextProps.baseData.coverageList);
             if (nextProps.baseData.coverageList && nextProps.baseData.coverageList.length > 0) {
-                let tmpCoverageList = []
-                if (typeof nextProps.baseData.coverageList === 'string') {
-                    tmpCoverageList = filterInsurance(JSON.parse(nextProps.baseData.coverageList))
-                } else {
-                    tmpCoverageList = filterInsurance(nextProps.baseData.coverageList)
-                }
+                let tmpCoverageList = filterInsurance(JSON.parse(nextProps.baseData.coverageList))
                 this.setState({
                     coverageList: tmpCoverageList,
                 })
             }
-            
-            // if (nextProps.baseData.supplierId !== 0) {
-            //     this.state.supplierName = this.props.changesupplierIdToName(nextProps.baseData.supplierId)
-            // }
             this.setState({
                 baseData: nextProps.baseData
             })
@@ -69,63 +58,101 @@ export default class BaseInfo extends React.Component{
         }
         return str
     }
-    showRobModal () {
+    showRobModal = () => {
         this.props.showRobModal()
     }
+    CopyValue = (e) => {
+        let ele = e.target
+        if(ele.className==='info-content'){
+            let val = ele.innerText
+            let hiddenEle = document.getElementById('input-hidden')
+            hiddenEle.value=val
+            hiddenEle.select()
+            document.execCommand('copy')
+            message.success('复制成功');
+        }
+    }
     render () {
-        // const { baseData } = this.props;
         const { coverageList, baseData, supplierName } = this.state;
         return (
             <div className='base-info-container' id='base-info-detail' style={{height: 'initial', overflowY: 'auto'}}>
                 <Collapse defaultActiveKey={['1','2', '3', '4', '5']} >
-                    <Panel style={{display: baseData.customerId!=0 ? 'block' : 'none'}} className='panel-style' header="接单员信息" key="5">
-                        <ul>
-                            <li className='info-item'>
-                                <span className='base-info-title'>接单员：</span>
-                                <span className='info-content'>{ baseData.customerName } </span>
-                            </li>
-                            <li className='info-item'>
-                                <span className='base-info-title'>接单时间：</span>
-                                <span className='info-content'>{ baseData.orderReceivedTime }</span>
-                            </li>
-                        </ul>
-                    </Panel>
                     <Panel className='panel-style' header="车辆信息" key="1">
-                        <ul>
-                            <li className='info-item'>
-                                <span className='base-info-title'>车牌号：</span>
-                                <span className='info-content'>{ baseData.licenseNo } </span>
-                            </li>
-                            <li className='info-item'>
-                                <span className='base-info-title'>车架号：</span>
-                                <span className='info-content'>{ baseData.frameNo }</span>
-                            </li>
-                            <li className='info-item'>
-                                <span className='base-info-title'>发动机号：</span>
-                                <span className='info-content'>{ baseData.engineno }</span>
-                            </li>
-                            <li className='insurance-info '>
-                                <span className='base-info-title'>保险公司：</span>
-                                    <ul>
-                                        {
-                                            baseData && baseData.supplierIdList && baseData.supplierIdList.length > 0
-                                            ? baseData.supplierIdList.map((item, index) => {
-                                                return(
-                                                    <li key={index}>
-                                                        <span className='info-content-li'>{this.changesupplierIdToName(item)}<span className='grey'> (已指定)</span></span>
-                                                        <button className='get-price-btn' style={{ display:baseData.status === -9 ? 'none' : 'inline-block'}} onClick={() => {this.getPrice(item)}}>去报价</button>
-                                                    </li>
-                                                )
-                                            })
-                                            : <li>
-                                                <span className='info-content-li'>未指定</span>
-                                                <button className='get-price-btn' style={{ display:baseData.status === -9 ? 'none' : 'inline-block'}} onClick={() => {this.getPrice()}}>去报价</button>
-                                            </li>
-                                        }
-                                    </ul>
-                                {/* <span className='info-content'>{ baseData.supplierId ? supplierName : '未指定' }<span className='grey'>{ baseData.supplierId ? '（已指定）' : '' }</span></span> */}
-                            </li>
-                        </ul>
+                        {
+                            !baseData.carbaseinfoDto
+                            ? <div className='no-info'>暂无车辆信息</div>
+                            : <ul onClick={this.CopyValue}>
+                                <li className='info-item-container'>
+                                    <span className='base-info-title'>车牌号：</span>
+                                    <span className='info-content'>{ baseData.carbaseinfoDto.licenseno || '-' } </span>
+                                    <input type="text" id="input-hidden" style={{width:"30px",opacity:0}} />
+                                </li>
+                                <li className='info-item-container'>
+                                    <span className='base-info-title'>车辆类型：</span>
+                                    <span className='info-content'>{baseData.carbaseinfoDto.vehicleType || '-'}</span>
+                                </li>
+                                <li className='info-item-container'>
+                                    <span className='base-info-title'>所有人：</span>
+                                    <span className='info-content'>{baseData.carbaseinfoDto.ownername || '-'}</span>
+                                </li>
+                                <li className='info-item-container'>
+                                    <span className='base-info-title'>住址：</span>
+                                    <span className='info-content'>{baseData.carbaseinfoDto.owneraddress || '-'}</span>
+                                </li>
+                                <li className='info-item-container'>
+                                    <span className='base-info-title'>使用性质：</span>
+                                    <span className='info-content'>{baseData.carbaseinfoDto.useCharacter || '-'}</span>
+                                </li>
+                                <li className='info-item-container'>
+                                    <span className='base-info-title'>品牌型号：</span>
+                                    <span className='info-content'>{baseData.carbaseinfoDto.automodelname || baseData.carbaseinfoDto.automodelcode || '-'}</span>
+                                </li>
+                                <li className='info-item-container'>
+                                    <span className='base-info-title'>车架号：</span>
+                                    <span className='info-content'>{ baseData.carbaseinfoDto.frameno || '-' }</span>
+                                </li>
+                                <li className='info-item-container'>
+                                    <span className='base-info-title'>发动机号：</span>
+                                    <span className='info-content'>{ baseData.carbaseinfoDto.engineno || '-' }</span>
+                                </li>
+                                <li className='info-item-container'>
+                                    <span className='base-info-title'>注册日期：</span>
+                                    <span className='info-content'>{baseData.carbaseinfoDto.firstregisterdate && baseData.carbaseinfoDto.firstregisterdate.substring(0, 10) || '-'}</span>
+                                </li>
+                                <li className='info-item-container'>
+                                    <span className='base-info-title'>发证日期：</span>
+                                    <span className='info-content'>{baseData.carbaseinfoDto.issueDate || '-'}</span>
+                                </li>
+                                <li className='info-item-container'>
+                                    <span className='base-info-title'>整备质量：</span>
+                                    <span className='info-content'>{baseData.carbaseinfoDto.wholeweight || '-'}</span>
+                                </li>
+                                <li className='info-item-container'>
+                                    <span className='base-info-title'>核载质量：</span>
+                                    <span className='info-content'>{baseData.carbaseinfoDto.vehicletonnages || '-'}</span>
+                                </li>
+                                <li className='info-item-container'>
+                                    <span className='base-info-title'>座位数：</span>
+                                    <span className='info-content'>{baseData.carbaseinfoDto.seats || '-'}</span>
+                                </li>
+                            </ul>
+                        }
+                    </Panel>
+                    <Panel className='panel-style' header="身份信息" key="3">
+                        {
+                            !baseData.carbaseinfoDto
+                            ? <div className='no-info'>暂无车辆信息</div>
+                            : <ul onClick={this.CopyValue}>
+                                <li className='info-item-container'>
+                                    <span className='base-info-title'>姓名：</span>
+                                    <span className='info-content'>{ baseData.carbaseinfoDto.ownername || baseData.ownerName || '' }</span>
+                                </li>
+                                <li className='info-item'>
+                                    <span className='base-info-title'>身份证号：</span>
+                                    <span className='info-content'>{  baseData.carbaseinfoDto.certificateno || baseData.ownerID || '' }</span>
+                                </li>
+                            </ul>
+                        }
                     </Panel>
                     <Panel className='panel-style' header="保险信息" key="2">
                         <ul>
@@ -134,70 +161,20 @@ export default class BaseInfo extends React.Component{
                                 ? (
                                     coverageList.map((item, index) => {
                                         return (
-                                            <li className='info-item' key={ index }>
+                                            <li className='info-item-container' key={ index }>
                                                 <span className='base-info-title'>{ item.ins }：</span>
-                                                <span className='info-content'>
+                                                <span className='info-content' style={{cursor: 'default'}}>
                                                     {this.formateCoverageItem(item)}
                                                 </span>
                                             </li>
                                         )
                                     })
                                 )
-                                : <li style={{textAlign: 'center'}}>暂未获取险种信息</li>
+                                : <li className='no-info'>暂未获取险种信息</li>
                             }
-                            
                         </ul>
-                    </Panel>
-                    <Panel className='panel-style' header="身份信息" key="3">
-                        <ul>
-                            <li className='info-item'>
-                                <span className='base-info-title'>姓名：</span>
-                                <span className='info-content'>{ baseData.ownerName }</span>
-                            </li>
-                            <li className='info-item'>
-                                <span className='base-info-title'>身份证号：</span>
-                                <span className='info-content'>{ baseData.ownerID }</span>
-                            </li>
-                        </ul>
-                    </Panel>
-                    <Panel className='panel-style' header="收件方式" key="4">
-                        {
-                            baseData.deliverytype === 0
-                            ? <div>
-                                <ul>
-                                    <li className='info-item'>
-                                        <span className='base-info-title'>收件方式：</span>
-                                        <span className='info-content'>自提</span>
-                                    </li>
-                                </ul>
-                              </div>
-                            : baseData.deliverytype === 1
-                                ? <div>
-                                    <ul>
-                                        <li className='info-item'>
-                                            <span className='base-info-title'>收件人：</span>
-                                            <span className='info-content'>{ baseData.usersName }</span>
-                                        </li>
-                                        <li className='info-item'>
-                                            <span className='base-info-title'>收件地址：</span>
-                                            <span className='info-content'>{ baseData.userAddress }</span>
-                                        </li>
-                                        <li className='info-item'>
-                                            <span className='base-info-title'>联系电话：</span>
-                                            <span className='info-content'>{ baseData.userMobile }</span>
-                                        </li>
-                                    </ul>
-                                </div>
-                                : <div><ul>
-                                <li className='info-item'>
-                                    <span className='base-info-title'>收件方式：</span>
-                                    <span className='info-content'>未设置</span>
-                                </li>
-                            </ul></div>
-                        }
                     </Panel>
                 </Collapse>
-                    
                 </div>
         )
     }

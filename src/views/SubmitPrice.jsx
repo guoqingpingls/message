@@ -679,7 +679,7 @@ export default class SubmitPrice extends React.Component{
             }
             <div className='upload-image-container'>
               <span className='upload-image-title' style={{marginBottom: '10px'}}>报价截图<span style={{fontSize: '12px'}}>（支持CTRL+V粘贴您QQ截取的报价图片）</span></span>
-              <div className="clearfix">
+              <div>
                 <Upload
                   action="https://openapi.youbaolian.cn/api/preprice-ins/files/upload/wx/"
                   listType="picture-card"

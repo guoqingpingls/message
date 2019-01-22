@@ -1,23 +1,25 @@
-ul{
-  padding: 0px;
-  margin: 0px;
-  list-style: none;
-  li{
-    padding: 0px;
-    margin: 0px;
-    list-style: none;
-  }
-}
 .base-info-container{
   font-size: 14px;
   overflow-y: auto;
   flex: 1;
   height: initial;
+  ul,li{
+    padding: 0px;
+    margin: 0px;
+    list-style: none;
+  }
   .panel-style{
     width: 100%;
-    .info-item{
-      height: 30px;
-      line-height: 30px;
+    .no-info{
+      color: #ddd;
+      width: 100%;
+      text-align: center;
+      height: 40px;
+      line-height: 40px
+    }
+    .info-item-container{
+      min-height: 30px;
+      line-height: 1.5;
       display: flex;
       .base-info-title{
         display: inline-block;
@@ -32,31 +34,10 @@ ul{
       .info-content{
         padding: 0px 10px;
         font-size: 14px;
-      }
-    }
-    .insurance-info{
-      line-height: 30px;
-      display: flex;
-      .base-info-title{
-
-      }
-      .info-content-li{
-        width: 133px;
-        display: inline-block;
-        padding: 0px 10px;
-        font-size: 14px;
-      }
-      .get-price-btn{
-        width: 66px;
-        height: 23px;
-        line-height: 20px;
-        background-color: #fff;
-        color: #fff;
-        background-color: #108ee9;
-        border-radius: 6px;
-        font-size: 16px;
-        border: none;
-        margin: 5px 0px;
+        flex: 1;
+        display: flex;
+        height: 100%;
+        cursor: pointer;
       }
     }
   }

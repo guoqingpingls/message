@@ -18,6 +18,7 @@ import qs from 'query-string';
 import { Scrollbars } from 'react-custom-scrollbars';
 import CheckModal from './CheckModal';
 import SubmitPrice from './SubmitPrice';
+import SendImageModal from './SendImageModal';
 import GeneratePolicy from './GeneratePolicy';
 import { openNavUrl, date, translateIdToName } from '../util/util.js';
 import {
@@ -531,6 +532,21 @@ export default class Index extends React.Component{
       this.queryInsuredPrice()
     }
   }
+  // 显示发送图片弹窗
+  showSendImage = () => {
+    this.setState({
+      isSendImage: true
+    })
+  }
+  hideSendImage = (type) => {
+    this.setState({
+      isSendImage: false
+    })
+    if (type) {
+      // refresh messagelist
+      this.getMessageList()
+    }
+  }
   render() {
     const {
       refreshData,
@@ -587,7 +603,7 @@ export default class Index extends React.Component{
             </Tabs>
           </div>
         </div>
-        <SendImage isSendImage={isSendImage} hideSendImage={this.hideSendImage} sendImage={this.sendImage}></SendImage>
+        {/* <SendImage isSendImage={isSendImage} hideSendImage={this.hideSendImage} sendImage={this.sendImage}></SendImage> */}
         <div className='info-modal' style={{ display: previewVisible ? 'block' : 'none' }} onClick={this.hideCheckModal}>
           <CheckModal getEnquireDetail={this.getEnquireDetail} hideCheckModal={this.hideCheckModal} priceId={priceId} imageSrc={previewImage} imagesInArr={imagesInArr} baseInfo={baseInfo}/>
         </div>
@@ -632,6 +648,17 @@ export default class Index extends React.Component{
         {
           isShowModal
           ? <GeneratePolicy baseInfo={baseInfo} close={this.closeGeneratePolicy} priceId={priceId}/>
+          : null
+        }
+        {
+          isSendImage
+          ? <SendImageModal
+              defaultImageUri={defaultImageUri}
+              hideSendImage={this.hideSendImage}
+              priceId={priceId}
+              baseInfo={baseInfo}
+              cid={cid}
+            />
           : null
         }
         <Modal title="接单提示"
