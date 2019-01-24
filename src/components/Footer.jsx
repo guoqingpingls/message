@@ -42,7 +42,7 @@ export default class Footer extends React.Component {
         e.preventDefault();
         e.stopPropagation();
         if (flag === 1) {
-        this.props.replyRemark(content)
+        this.replyRemark()
         }
     }
   }

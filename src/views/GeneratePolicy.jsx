@@ -5,6 +5,7 @@ const { hasCommercialInsurance, changesupplierIdToName } = require('../util/util
 import {submit_policy} from '../services/index';
 import qs from 'query-string';
 import '../stylesheets/GeneratePolicy.less';
+const name = '生成保单'
 export default class GeneratePolicy extends React.Component{
   constructor (props) {
     super(props);

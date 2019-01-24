@@ -1,6 +1,7 @@
 import React from 'react';
 import {Button} from 'antd';
 import '../stylesheets/EnquireRecord.less';
+const name = '报价记录'
 export default class EnquireRecord extends React.Component {
   constructor (props) {
     super(props);

@@ -7,6 +7,7 @@ import {
   parse_image,            // 识别图片
   confirm_pay_type,       // 发送支付方式
 } from '../services/index';
+const pageName = '发送图片'
 export default class PayType extends React.Component {
   constructor(props) {
     super(props);

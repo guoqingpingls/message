@@ -3,9 +3,6 @@ import axios from 'axios';
 import { Tabs, Modal, message, Menu, Dropdown, Icon, Avatar, Upload, Radio } from 'antd';
 import ChatImageList from './ChatImageList';
 import BaseInfo from './BaseInfo';
-import SubmitOffer from './SubmitOffer';
-import SendImage from './SendImage';
-import FormModal from './FormModal';
 import QueryInfo from './QueryInfo';
 import Message from './Message';
 import PayType from './PayType';
@@ -49,7 +46,7 @@ import sendImage from '../assets/images/send-image.png';
 import closeIcon from '../assets/images/close.png';
 import chooseActive from '../assets/images/choose-active.png';
 const TabPane = Tabs.TabPane;
-const pageName = 'Home';
+const pageName = '主页';
 const confirm = Modal.confirm;
 const RadioGroup = Radio.Group;
 export default class Index extends React.Component{
@@ -84,6 +81,7 @@ export default class Index extends React.Component{
       allInsuranceCp: [],   // 当前商户的保险公司列表
       isShowToast: false,   // 是否显示提示
       recordList: [],  // 报价记录
+      chatImageList: [],  // 聊天图片
     };
   }
   componentDidMount () {
@@ -210,6 +208,7 @@ export default class Index extends React.Component{
   // 回复消息
   // updatePriceDetail 是否更新price detail
   replyRemark = (replyContent, updatePriceDetail) => {
+    let {messageList, baseInfo, priceId, cid} = this.state;
     if (replyContent.trim().length === 0) {
       message.config({
           top: 580,
@@ -220,33 +219,31 @@ export default class Index extends React.Component{
     }
     this.refs.footer.clearvalue()
     let d = new Date()
-    let messageList = this.state.messageList.concat([{
-      id: this.state.cid,
+    messageList.unshift({
+      id: cid,
       usertype: 2,
-      name: this.state.baseInfo.customerName,
+      name: baseInfo.customerName,
       senddate: `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()} ${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`,
       info: replyContent
-    }])
+    })
     this.setState({
-      messageList: messageList
+      messageList
     })
     let params = {
-      priceid: this.state.priceId,
-      carinfoid: this.state.baseInfo.carinfoid,
+      priceid: priceId,
+      carinfoid: baseInfo.carinfoid,
       info: replyContent,
       usertype: 2,
-      cid: this.state.cid
+      cid: cid
     };
     let self = this;
     reply_remark_api(params).then((res) => {
-      const { baseInfo } = this.state;
       let msgContent = {};
       msgContent.type = "IM";
       msgContent.target = 'C_' + baseInfo.userid;
       msgContent.msg = replyContent;
       msgContent.time = Date.now();
       localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
-      // self.getNodeData();
       self.getMessageList();
       if (updatePriceDetail) {
         self.getPriceDetail()
@@ -445,7 +442,6 @@ export default class Index extends React.Component{
           })
           tmpCpList = tmpCpList.concat(tmpSup);
         });
-        console.log(tmpCpList)
         self.setState({
           allInsuranceCp: tmpCpList
         })
@@ -531,6 +527,28 @@ export default class Index extends React.Component{
     if (+activeKey === 4) {
       this.queryInsuredPrice()
     }
+    // 获取聊天图片
+    if (+activeKey === 3) {
+      this.getChatImages()
+    }
+  }
+  // 获取聊天图片
+  getChatImages = () => {
+    let {messageList} = this.state
+    let list = []
+    messageList.map((item) => {
+      if (item.imageuris && item.imageuris.length > 0) {
+        list.push({
+          name: item.cname,
+          senddate: item.senddate,
+          imageuris: item.imageuris,
+          usertype: item.usertype
+        })
+      }
+    })
+    this.setState({
+      chatImageList: list
+    })
   }
   // 显示发送图片弹窗
   showSendImage = () => {
@@ -572,7 +590,8 @@ export default class Index extends React.Component{
       isShowRobTip,
       fromRecord,
       isShowToast,
-      recordList
+      recordList,
+      chatImageList
     } = this.state;
     return (
       <div className='content-wrapper'>
@@ -595,7 +614,7 @@ export default class Index extends React.Component{
                 <QueryInfo baseData={baseInfo} />
               </TabPane>
               <TabPane tab={<span className='tab-container'><i className='iconfont icon-tupian-copy tab-icon' /><span>聊天图片</span></span>} key="3">
-                <ChatImageList priceId={priceId} handlePreview={this.handlePreview} allImageList={allImageList} />
+                <ChatImageList priceId={priceId} handlePreview={this.handlePreview} chatImageList={chatImageList} />
               </TabPane>
               <TabPane style={{position: 'relative'}} tab={<span className='tab-container'><i className='iconfont icon-shizhong tab-icon' /><span>报价记录</span></span>} key="4">
                 <EnquireRecord recordList={recordList} usePrice={this.usePrice} />

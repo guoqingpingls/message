@@ -3,6 +3,7 @@ import MpModal from '../components/MpModal';
 import {Upload, Modal, message, Icon } from 'antd';
 import {reply_remark_api} from '../services/index';
 import '../stylesheets/SendImageModal.less';
+const pageName = '发送图片'
 export default class SendImageModal extends React.Component{
   constructor (props) {
     super(props);

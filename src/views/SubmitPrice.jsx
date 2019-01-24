@@ -9,6 +9,7 @@ import {
   submit_to_get_price
 } from '../services/index';
 import { type } from 'os';
+const pageName = '提交报价'
 export default class SubmitPrice extends React.Component{
   // 数据三个来源
   // baseInfo 基础数据 渲染ui 无填充
@@ -52,6 +53,7 @@ export default class SubmitPrice extends React.Component{
     if (isEmptyObject(queryPriceInfo)) {
       this.state.dataType = 1
       this.state.recordId = queryPriceInfo.SupplierId;
+      this.state.supplierId = queryPriceInfo.SupplierId;
       this.dealBaseData(queryPriceInfo, true)
     } else {
       this.dealBaseData(baseInfo, false)

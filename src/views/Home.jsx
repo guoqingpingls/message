@@ -1,21 +1,21 @@
 import React from 'react';
-import { Tabs, Modal, message, Menu, Dropdown, Icon, Avatar, Upload, Radio } from 'antd';
-import HistoryList from './HistoryList';
-import ChatImageList from './ChatImageList';
-import BaseInfo from './BaseInfo';
-import SubmitOffer from './SubmitOffer';
-import SendImage from './SendImage';
-import FormModal from './FormModal';
-import QueryInfo from './QueryInfo';
-import Message from './Message';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
-import MpModal from '../components/MpModal';
-import qs from 'query-string';
-import { Scrollbars } from 'react-custom-scrollbars';
-import request from 'request';
-import config from '../config'
-import CheckModal from './CheckModal';
+import axios from 'axios';
+import { Popover, Tooltip, Row, Col, Tabs, Modal, message, Menu, Dropdown, Icon, Avatar, Upload, Radio, Alert} from 'antd';
+// import HistoryList from './HistoryList';
+// import ChatImageList from './ChatImageList';
+// import BaseInfo from './BaseInfo';
+// import SubmitOffer from './SubmitOffer';
+// import SendImage from './SendImage';
+// import FormModal from './FormModal';
+// import QueryInfo from './QueryInfo';
+// import Iframe from './Iframe';
+// import EnquireRecord from './EnquireRecord';
+// import ChooseJobNo from './ChooseJobNo';
+// import qs from 'query-string';
+// import { Scrollbars } from 'react-custom-scrollbars';
+// import request from 'request';
+// import config from '../config'
+// import CheckModal from './CheckModal';
 import {
     get_preprice_ins_inspreprices_priceDetails, //基本信息
     get_preprice_ins_message, //获取询价信息
@@ -25,7 +25,7 @@ import {
     finish_policy,   // 完成保单
     submit_to_get_price,    // 提交报价
     reply_remark_api,    // 回复
-    get_historical_price,    // 获取历史报价
+    // get_historical_price,    // 获取历史报价
     get_insurance_cp_list,      //获取保险公司列表
     transfer_search,    //转接查询
     transfer_to_others,         // 转接
@@ -44,32 +44,18 @@ import tip from '../assets/images/tip.png';
 import sendImage from '../assets/images/send-image.png';
 import closeIcon from '../assets/images/close.png';
 import chooseActive from '../assets/images/choose-active.png';
+import customer from '../assets/images/customer.png';
+import abIcon from '../assets/images/ab-icon.png';
+import operateIcon from '../assets/images/open-operate.png';
+import operateIconActive from '../assets/images/open-operate-active.png';
+import guide from '../assets/images/setting-guide.png';
+const { insuranceInString, changesupplierIdToName, date, openNavUrl } = require('../util/util.js');
 const TabPane = Tabs.TabPane;
 const pageName = 'Home';
 const confirm = Modal.confirm;
 const RadioGroup = Radio.Group;
 
-function _openNavUrl(_url, title) {
-    var url = _url;
-    if (_url && _url.substr(0, 1) == '/') {
-        url = "http://" + window.location.host + _url;
-    }
-    var _req = {
-        customerId: 0,
-        type: 0,
-        id: parseInt(Math.random() * 10000).toString(),
-        url: url,
-        title: title,
-        jsCode: ""
-    };
-    try {
-        window.IAgencyWebCall("OpenUrl", JSON.stringify(_req), "");
-    } catch (e) {
-        window.open(url);
-    }
-};
-
-export default class Index extends React.Component {
+export default class Home extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -113,8 +99,21 @@ export default class Index extends React.Component {
             cid: null,          // saas端customerid
             isShowRobBtn: false,
             isShowAbnormal: false,      // 异常操作弹窗
-            // isShift: false,             // 是不是shift
+            isShift: false,             // 是不是shift
             flag: 1,
+            isShowJobnoModal: false,        // 是否显示选择工号弹窗
+            isShowInsuranceModal: false,    // 是否显示选择保司弹窗
+            recordList: [],
+            isGetJobNo: true,   // 是否获取工号
+            jobnoList: [],
+            isGetAllInsurance: true,
+            isShowOperate: true,    // 是否显示报价操作栏
+            isShowSettingGuide: false,  // 设置引导图片
+            isShowJobNo: false,       // 是否显示工号选择页
+            chooseTitle: '',        // 选择工号
+            chooseList: [],
+            isShowIframe: false,
+            iframeSrc: '',
         };
         window.addEventListener('storage', (event) => {
             console.log(event);
@@ -162,8 +161,12 @@ export default class Index extends React.Component {
         this.refs.scrollbars.scrollToBottom();
     };
     // 获取保险公司
-    getAllInsuranceCp = (partnerId) => {
-        get_insurance_cp_list(partnerId).then((res) => {
+    getAllInsuranceCp = () => {
+        let {isGetAllInsurance, baseInfo} = this.state;
+        if (!isGetAllInsurance) {
+            return;
+        }
+        get_insurance_cp_list(baseInfo.partnerId).then((res) => {
             let cpList = res.dtoList;
             let tmpCpList = [];
             cpList.map((item, index) => {
@@ -238,8 +241,19 @@ export default class Index extends React.Component {
                         }
                         messageList.push(item)
                     })
-                    this.setState({ baseInfo: data[0].dtoList[0], messageList: messageList.reverse() }, () => { this.getHistoricalPrice(); this.getImagesList() })
-                    self.getAllInsuranceCp(data[0].dtoList[0].partnerId);
+                    if (data[0].dtoList[0].supplierIdList && data[0].dtoList[0].supplierIdList.length) {
+                        let supplierList = data[0].dtoList[0].supplierIdList.map((item) => {
+                            return ({
+                                name: changesupplierIdToName(item),
+                                id: item,
+                                icon:  `http://f2.ananyun.net/BakSite/Resources/img/logo/small/${item}.jpg`
+                            })
+                        })
+                        data[0].dtoList[0].supplierList = supplierList
+                    }
+                    
+                    this.setState({ baseInfo: data[0].dtoList[0], messageList: messageList.reverse() }, () => { this.getImagesList(); this.getJobNo(); this.getAllInsuranceCp() })
+                    // self.getAllInsuranceCp(data[0].dtoList[0].partnerId);
                 });
         } else {
             // this.setState({baseInfo: _baseInfo, messageList: _messageList})
@@ -250,6 +264,16 @@ export default class Index extends React.Component {
         let priceId = this.state.priceId
         let self = this;
         get_preprice_ins_inspreprices_priceDetails(priceId).then((res) => {
+            if (res.dtoList[0].supplierIdList && res.dtoList[0].supplierIdList.length) {
+                let supplierList = res.dtoList[0].supplierIdList.map((item) => {
+                    return ({
+                        name: changesupplierIdToName(item),
+                        id: item,
+                        icon:  `http://f2.ananyun.net/BakSite/Resources/img/logo/small/${item}.jpg`
+                    })
+                })
+                res.dtoList[0].supplierList = supplierList
+            }
             self.setState({
                 baseInfo: res.dtoList[0]
             })
@@ -274,49 +298,65 @@ export default class Index extends React.Component {
     }
     // 提交报价
     btnClick = () => {
-        if (Number(this.state.baseInfo.status) === 1 || Number(this.state.baseInfo.status) === 2) {
-            this.setState({
-                isShowSubmit: true
-            })
-        } else {
-            message.config({
-                top: 580,
-                duration: 2
-            })
-            message.info('当前订单不可报价', 2);
-        }
+        this.setState({
+            isShowSubmit: true
+        })
+        // if (Number(this.state.baseInfo.status) === 1 || Number(this.state.baseInfo.status) === 2) {
+        //     this.setState({
+        //         isShowSubmit: true
+        //     })
+        // } else {
+        //     message.config({
+        //         top: 580,
+        //         duration: 2
+        //     })
+        //     message.info('当前订单不可报价', 2);
+        // }
     };
-    getHistoricalPrice = () => {
-        if (this.state.baseInfo.licenseNo) {
-            let tmp = {
-                licenseNo: this.state.baseInfo.licenseNo
-            };
-            let params = qs.stringify(tmp);
-            get_historical_price(params).then((res) => {
-                if (res.dtoList.length) {
-                    this.setState({
-                        historicalPriceList: res.dtoList
-                    })
-                }
-            }).catch((err) => {
-                console.log('err: ', err)
-            })
-        }
-    };
-
-    btn1Click = (supplierId) => {
+    // getHistoricalPrice = () => {
+    //     if (this.state.baseInfo.licenseNo) {
+    //         let tmp = {
+    //             licenseNo: this.state.baseInfo.licenseNo
+    //         };
+    //         let params = qs.stringify(tmp);
+    //         get_historical_price(params).then((res) => {
+    //             if (res.dtoList.length) {
+    //                 this.setState({
+    //                     historicalPriceList: res.dtoList
+    //                 })
+    //             }
+    //         }).catch((err) => {
+    //             console.log('err: ', err)
+    //         })
+    //     }
+    // };
+    // 去ai报价
+    toAiQuote = (item) => {
+        let { baseInfo } = this.state;
+        let currUrl = ('http://' + location.host);
+        let id = item.id
+        // let url = `${currUrl}/LitePaperOffer/AiQuote?itemid=${baseInfo.priceitemid}&priceId=${this.state.priceId}&supId=${item.id}&jobnoid=${item.jobnoid || ''}`;
+        let url = `http://insbak.ananyun.net/LitePaperOffer/AiQuote?itemid=${baseInfo.priceitemid}&priceId=${this.state.priceId}&supId=${item.id}&jobnoid=${item.jobnoid || ''}`;
+        // window.open(url)
+        console.log(url)
+        this.setState({
+            isShowIframe: true,
+            iframeSrc: url
+        })
+        
+    }
+    btn1Click = () => {
         const { baseInfo } = this.state;
         // http://testinsbak.ananyun.net/LitePaperOffer/AddOffer?isGuide=true&s=list&itemid=询价单详情id&priceId=询价单id&SupplierId=指定的保险公司id&VehicleLicenceCode=编码后的车牌号&VehicleFrameNo=车架号&EngineNo=发动机号&OwnerName=姓名&OwnerIDCard=证件号&OwnerAddress=地址&OwnerMobile=手机&carImageFront=行驶证正面
         const currUrl = ('http://' + location.host);
-        let id = supplierId == undefined ? '' : supplierId;
+        // let id = supplierId == undefined ? '' : supplierId;
         // const url = currUrl + "/LitePaperOffer/AddOffer?isGuide=true&s=list&itemid=" + baseInfo.priceitemid + '&priceId=' + this.state.priceId + "&SupplierId=" + id + "&VehicleLicenceCode=" + baseInfo.licenseNo + "&VehicleFrameNo=" + baseInfo.frameNo + "&EngineNo=" + baseInfo.engineno + "&OwnerName=" + baseInfo.ownerName + "&OwnerIDCard=" + baseInfo.ownerID + '&OwnerAddress=' + baseInfo.userAddress + '&OwnerMobile=' + baseInfo.userMobile + '&carImageFront=' + baseInfo.carImageFront;
         const url = currUrl + "/LitePaperOffer/AddOffer?isGuide=true&s=list&itemid=" + baseInfo.priceitemid + '&priceId=' + this.state.priceId + '&carImageFront=' + baseInfo.carImageFront;
         if (baseInfo.licenseNo) {
-            _openNavUrl(url, baseInfo.licenseNo + '-报价');
+            openNavUrl(url, baseInfo.licenseNo + '-报价');
         } else {
-            _openNavUrl(url, baseInfo.priceno + '-报价');
+            openNavUrl(url, baseInfo.priceno + '-报价');
         }
-
     }
     insertTicket = () => {
         let self = this;
@@ -334,7 +374,7 @@ export default class Index extends React.Component {
                     urlParmas += self.state.submitForm.ciPolicyNo;
                 }
                 let url = config.url + '/Policy/Lot?insno=' + urlParmas + '&SalesmanId=' + self.state.baseInfo.usersDetail.customerId;
-                _openNavUrl(url, '录入保单');
+                openNavUrl(url, '录入保单');
             },
             onCancel() {
                 console.log('cancel');
@@ -346,7 +386,16 @@ export default class Index extends React.Component {
             isShowSubmit: false
         })
     }
-    replyRemark = (replyContent) => {
+    replyRemark = (content) => {
+        // if (this.state.flag === 2) {
+        //     return;
+        // }
+        let replyContent;
+        if (content) {
+            replyContent = content;
+        } else {
+            replyContent = this.refs.reply.value;
+        }
         if (replyContent.trim().length === 0) {
             message.config({
                 top: 580,
@@ -355,7 +404,8 @@ export default class Index extends React.Component {
             message.info('消息内容不能为空', 2);
             return;
         }
-        this.refs.footer.clearvalue()
+        this.refs.reply.value = ''
+        console.log('content: ',replyContent, ' value: ', this.refs.reply.value )
         let d = new Date()
         let messageList = this.state.messageList.concat([{
             id: this.state.cid,
@@ -375,15 +425,26 @@ export default class Index extends React.Component {
             cid: this.state.cid
         };
         let self = this;
+        // this.state.flag = 2
+        // setTimeout(() => {
+        //     this.state.flag = 1
+        // }, 200)
         reply_remark_api(params).then((res) => {
             const { baseInfo } = this.state;
+            if (content) {
+                console.log(content);
+            } else {
+                self.refs.reply.value = '';
+            }
             let msgContent = {};
             msgContent.type = "IM";
             msgContent.target = 'C_' + baseInfo.userid;
             msgContent.msg = replyContent;
             msgContent.time = Date.now();
             localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
+
             self.getNodeData();
+
         }).catch((err) => {
             console.log('err: ', err);
         })
@@ -498,6 +559,7 @@ export default class Index extends React.Component {
      */
 
     operateFrom = (item) => {
+        debugger;
         let btnStatus = item.buttonstatus;
         let { baseInfo, priceId, cid } = this.state;
         if (btnStatus < -3 || btnStatus > 3) {
@@ -685,12 +747,17 @@ export default class Index extends React.Component {
     };
     // 使用此报价
     usePrice = (info) => {
-        info.status = this.state.baseInfo.status;
+        // info.status = this.state.baseInfo.status;
         this.state.queryPriceInfo = info;
         this.btnClick();
     };
+    // 清空queryPriceInfo
+    clearQueryPriceInfo = () => {
+        this.state.queryPriceInfo = {};
+    }
     refuseOrder = () => {
         let refuseReason = this.refs.refuseReason.value || '';
+        //const { cid } = this.state;
         if (refuseReason.trim().length === 0) {
             message.info('请输入拒绝原因！！')
             return
@@ -698,12 +765,14 @@ export default class Index extends React.Component {
         let params = {
             id: this.state.priceId,
             closeReason: refuseReason
+            //cid:cid
         }
         let self = this;
         close_order(params).then((res) => {
             console.log(res)
             if (res.returnCode === 1) {
                 self.setState({
+                    // isShowRefuseModal: false,
                     isShowAbnormal: false
                 })
                 var str = ('您的询价单已经被关闭，关闭原因是：'+refuseReason);
@@ -715,10 +784,12 @@ export default class Index extends React.Component {
     // 异常操作
     abOperate = () => {
         let { baseInfo } = this.state;
-        this.getTransferData()
-        this.setState({
-            isShowAbnormal: true
-        })
+        //if (Number(baseInfo.status) === 1 || Number(baseInfo.status) === 2) {
+            this.getTransferData()
+            this.setState({
+                isShowAbnormal: true
+            })
+        //}
     }
     // 获取转接数据
     getTransferData = () => {
@@ -766,6 +837,7 @@ export default class Index extends React.Component {
             message.info('当前订单不可转接', 2);
         }
     }
+    // 转接
     transferToOthers = (item) => {
         let { baseInfo } = this.state;
         this.setState({
@@ -820,6 +892,7 @@ export default class Index extends React.Component {
             previewVisible: false,
             previewImage: ''
         })
+        this.refs.checkModal.resetChooseIndex()
     }
     // show 上传图片弹窗
     showSendImage = () => {
@@ -1081,30 +1154,311 @@ export default class Index extends React.Component {
             isShowAbnormal: false
         })
     }
-    // keyDown = (e, content) => {
-    //     let { isShift } = this.state;
-    //     let self = this;
-    //     let flag = 1
-    //     if (e.keyCode === 16 || isShift) {
-    //         self.state.isShift = true
-    //         setTimeout(() => {
-    //             self.state.isShift = false
-    //         }, 200)
-    //     } else if (e.keyCode === 13) {
-    //         e.cancelBubble = true;
-    //         e.preventDefault();
-    //         e.stopPropagation();
-    //         if (flag === 1) {
-    //             this.replyRemark(content)
-    //         }
-    //     }
+    keyDown = (e) => {
+        let { isShift } = this.state;
+        let self = this;
+        let flag = 1
+        if (e.keyCode === 16 || isShift) {
+            self.state.isShift = true
+            setTimeout(() => {
+                self.state.isShift = false
+            }, 200)
+            // console.log('1111')
+        } else if (e.keyCode === 13) {
+            e.cancelBubble = true;
+            e.preventDefault();
+            e.stopPropagation();
+            if (flag === 1) {
+                this.replyRemark()
+            }
+            // console.log('2222')
+        }
+    }
+    changeTab = (activeKey) => {
+        if (+activeKey === 4) {
+            this.queryInsuredPrice()
+        }
+    }
+
+    // 获取报价记录
+    queryInsuredPrice = () => {
+        let {baseInfo} = this.state;
+        // let params = {
+        //     // LicenseNo: '鲁AC525G',
+        //     LicenseNo: baseInfo.licenseNo,
+        //     QueryType: 0,
+        //     InsName: '', // 订单号
+        //     PartnerId: baseInfo.partnerId,
+        //     CustomerId: baseInfo.customerId,
+        //     // PriceType: 2,
+        //     addStartTime: date().add(-3, 'd').format('YYYY-MM-DD hh:mm:ss'),
+        //     addEndTime: date().format('YYYY-MM-DD hh:mm:ss'),
+        //     Paging: {
+        //       TakeCount: 10,
+        //       SkipCount: 0
+        //     }
+        // }
+        let params = {
+            // LicenseNo: '冀AG3011',
+            LicenseNo: baseInfo.licenseNo,
+            QueryType: 0,
+            InsName: '', // 订单号
+            PartnerId: baseInfo.partnerId,
+            // CustomerId: baseInfo.customerId,
+            // CustomerId: '140678',
+            PriceType: 2,
+            addStartTime: date().add(-3, 'd').format('YYYY-MM-DD'),
+            addEndTime: date().format('YYYY-MM-DD hh:mm:ss'),
+            Paging: {
+              TakeCount: 10,
+              SkipCount: 0
+            }
+        }
+        let self = this;
+        let list = []
+        axios({
+            method: 'post',
+            url: 'http://insuredapi.youbaolian.cn/api/insured?action=QueryInsuredPrice',
+            // url: 'http://mock-insuredapi.youbaolian.cn/api/insured?action=QueryInsuredPrice',
+            data: JSON.stringify(params)
+          }).then(({data}) => {
+            if (data.ResultCode === 0 && data.data && data.data.length) {
+                data.data.map((item) => {
+                    if (item.UpdateTime > date().add(-3, 'd').format('YYYY-MM-DD') && item.data && item.data.length) {
+                        item.data.map((ite) => {
+                            let coverageList = []
+                            // let name = ''
+                            ite.data.map((ite) => {
+                                // name = insuranceInString(ite.DetailId)
+                                coverageList.push({
+                                    DetailId: ite.DetailId,
+                                    InsuredPremium: ite.InsuredPremium,
+                                    name: insuranceInString(ite.DetailId)
+                                })
+                            })
+                            list.push({
+                                UpdateTime: (ite.UpdateTime.indexOf('T')>-1? ite.UpdateTime.replace('T',' '): ite.UpdateTime),
+                                PriceItemId: ite.PriceItemId,
+                                BIDiscount: ite.BIDiscount,
+                                BIPremium: ite.BIPremium,
+                                CIPremium: ite.CIPremium,
+                                CarshipTax: ite.CarshipTax,
+                                SupplierName: ite.SupplierName,
+                                TotalPrice: ite.TotalPrice,
+                                SupplierId: ite.SupplierId,
+                                coverageList: coverageList,
+                                CICarTotal: ite.CIPremium + ite.CarshipTax
+                            })
+                        })
+                        self.setState({
+                            recordList: list
+                        })
+                    }
+                })
+                
+            }
+            // if (data.ResultCode === 0 && data.data && data.data[0] && data.data[0].data && data.data[0].data.length) {
+            //     let resultList = [];
+            //     // let list = data.data[0].data;
+            //     let tmpList = data
+            //     list.map((item) => {
+            //         // formate coverageList
+            //         let coverageList = []
+            //         let name = ''
+            //         item.data.map((ite) => {
+            //             name = insuranceInString(ite.DetailId)
+            //             coverageList.push({
+            //                 DetailId: ite.DetailId,
+            //                 InsuredPremium: ite.InsuredPremium,
+            //                 name: name
+            //             })
+            //         })
+            //         resultList.push({
+            //             AddTime: item.AddTime.slice(0, 10),
+            //             PriceItemId: item.PriceItemId,
+            //             BIDiscount: item.BIDiscount,
+            //             BIPremium: item.BIPremium,
+            //             CIPremium: item.CIPremium,
+            //             CarshipTax: item.CarshipTax,
+            //             SupplierName: item.SupplierName,
+            //             TotalPrice: item.TotalPrice,
+            //             SupplierId: item.SupplierId,
+            //             coverageList: coverageList,
+            //             CICarTotal: item.CIPremium + item.CarshipTax
+            //         })
+            //     })
+            //     console.log(resultList)
+            //     self.setState({
+            //         recordList: resultList
+            //     })
+            // }
+          })
+    }
+    // 关闭弹窗
+    closePopover = () => {
+        let {isShowJobnoModal, isShowInsuranceModal} = this.state;
+        if (isShowJobnoModal || isShowInsuranceModal) {
+            this.setState({
+                isShowJobnoModal: false,
+                isShowInsuranceModal: false
+            })
+        }
+    }
+    // 显示选择工号弹窗
+    showJobnoModal = (e) => {
+        e.stopPropagation();
+        this.setState({
+            isShowJobnoModal: true,
+            isShowInsuranceModal: false
+        })
+    }
+    // 显示选择保司弹窗
+    showInsuranceModal = (e) => {
+        e.stopPropagation();
+        this.setState({
+            isShowJobnoModal: false,
+            isShowInsuranceModal: true
+        })
+    }
+    // 获取常用工号
+    getJobNo = () => {
+        let {baseInfo, isGetJobNo, cid} = this.state;
+        let jobnoList = []
+        let self = this;
+        if (isGetJobNo) {
+            this.state.isGetJobNo = false;
+            axios({
+                method: 'get',
+                // headers: {"Access-Control-Allow-Origin": "*"},
+                url: `http://insbak.ananyun.net/zongan/GetSettingJobNos?customerId=${cid}`
+                // url: `http://pre2.insbak.ananyun.net/zongan/GetSettingJobNos?customerId=${cid}`
+            }).then(({data}) => {
+                // console.log(res)
+                if (data.ResultCode === 1 && data.jobNos && data.jobNos.length) {
+                    let  jobnoList = []
+                    data.jobNos.map((item) => {
+                        // if (item.BindLoginUrl && item.BindLoginUrl.length) {
+                            let LoginName = item.Remark && item.Remark.length ? `-${item.Remark}-${item.LoginName}` :`-${item.LoginName}`
+                            jobnoList.push({
+                                id: item.SupplierId,
+                                name: item.Partner.PartnerName + LoginName,
+                                icon: `http://f2.ananyun.net/BakSite/Resources/img/logo/small/${item.SupplierId}.jpg`,
+                                PartnerId: item.PartnerId,
+                                jobnoid: item.JobNOId
+                            })
+                        // }
+                    })
+                    self.setState({
+                        jobnoList: jobnoList
+                    })
+                }
+                console.log(jobnoList)
+            })
+        }
+    }
+    showOperate = () => {
+        let { isShowOperate } = this.state;
+        this.setState({
+            isShowOperate: !isShowOperate
+        })
+    }
+    cancalSettingGuide = () => {
+        this.setState({
+            isShowSettingGuide: false
+        })
+    }
+    // showSettingGuide = () => {
+    //     // this.setState({
+    //     //     isShowSettingGuide: true
+    //     // })
+    //     let currUrl = ('http://' + location.host)
+    //     openNavUrl(`${currUrl}/Home/Index?jobno=true`)
     // }
+    toHome = () => {
+        // let url = 'http://insbak.ananyun.net/Home/Index?jobno=true'
+        //let currUrl = ('http://' + location.host)
+        //openNavUrl(`${currUrl}/home/Index?jobno=true`, '车险平台', 1)
+        var url= "http://" + window.location.host + '/home/index?jobno=true';
+        var _req = {
+            customerId: 0,
+            type: 0,
+            id: '0',
+            url: url,
+            title: '车险平台',
+            jsCode: ""
+        };
+        try {
+            window.IAgencyWebCall("OpenUrl", JSON.stringify(_req), "");
+        } catch (e) {
+            window.open(url);
+        }
+    }
+    showChoose = (item) => {
+
+        let self = this;
+        let {cid} = this.state;
+        let jobnoList;
+        axios({
+            method: 'get',
+            url: `http://insbak.ananyun.net/zongan/GetSettingJobNos?customerId=${cid}&supplierId=${item.id}&all=1`
+            // url: `http://pre2.insbak.ananyun.net/zongan/GetSettingJobNos?customerId=${cid}&supplierId=${item.id}&all=1`
+        }).then(({data}) => {
+            if (data.ResultCode === 1 && data.jobNos && data.jobNos.length) {
+                let jobnoList = []
+                data.jobNos.map((item) => {
+                    //if (item.BindLoginUrl && item.BindLoginUrl.length) {
+                        jobnoList.push({
+                            id: item.SupplierId,
+                            name: item.Remark && item.Remark.length ? `${item.Remark}-${item.LoginName}` : item.LoginName,
+                            icon: `http://f2.ananyun.net/BakSite/Resources/img/logo/small/${item.SupplierId}.jpg`,
+                            PartnerId: item.PartnerId,
+                            jobnoid: item.JobNOId
+                        })
+                    //}
+                });
+                self.setState({
+                    chooseTitle: item.name,
+                    isShowJobNo: true,
+                    chooseList: jobnoList
+                })
+            } else {
+                message.info('该保司未配置工号')
+            }
+        })
+    }
+    cancelChoose = () => {
+        let {isShowJobNo} = this.state;
+        this.setState({
+            isShowJobNo: false,
+            chooseList: []
+        })
+    }
+    closeIframe = () => {
+        let {isShowIframe} = this.state;
+        this.setState({
+            isShowIframe: false
+        })
+    }
+    // 显示modal提示
+    showModalInfo = (message) => {
+        Modal.error({
+            title: '提示',
+            okText: '知道了',
+            content: (
+              <div>
+                <p>{message}</p>
+              </div>
+            ),
+            onOk() {},
+        });
+    }
     render() {
         const {
+            chooseList,
+            isShowJobNo,
             refreshData,
             transferList,
             isTransfering,
-            // showTransferModal,
             allImageList,
             imagesInArr,
             hasChoosed,
@@ -1126,13 +1480,21 @@ export default class Index extends React.Component {
             previewImageuri,
             ispreviewImage,
             addressList,
-            // isShowRefuseModal,
             payType,
             isShowPayType,
             isShowConfirmModal,
             isShowRobBtn,
             isShowAbnormal,
-            payLink
+            payLink,
+            isShowJobnoModal,
+            isShowInsuranceModal,
+            recordList,
+            jobnoList,
+            isShowOperate,
+            isShowSettingGuide,
+            chooseTitle,
+            isShowIframe,
+            iframeSrc,
         } = this.state;
         const uploadButton = (
             <div>
@@ -1152,22 +1514,330 @@ export default class Index extends React.Component {
                 <Menu.Item>请问您需要怎么给您邮寄保单？</Menu.Item>
                 <Menu.Item>请您提供一下身份证正反面信息</Menu.Item>
                 <Menu.Item>请先认证业务员，在小程序内点击-我-点击去认证</Menu.Item>
-            </Menu>
-        )
+            </Menu>)
+        const message = messageList && messageList.map((item, index) => {
+            // usertype === 1 小程序
+            // usertype === 2 saas
+            if (item.usertype === 1) {
+                return (
+                    <li className='left-message-container' key={index}>
+                        <div className='avatar-container'>
+                            <Avatar size="large" icon="user" style={{ backgroundColor: '#108ee9' }} />
+                        </div>
+                        <div className='receive-message'>
+                            <div className='left-receive'>
+                                <span className="left-time">{item.name} {item.senddate}</span>
+                            </div>
+                            <div className='receive-message-info'>
+                            <div style={{ fontSize: '13px' }} dangerouslySetInnerHTML = {{ __html:item.info.replace(/\s+/g,'<br/>')}}></div>
+                                <div className='image-container'>
+                                    {
+                                        item.imageuris && item.imageuris.length && item.imageuris.map((ite, idx) => {
+                                            return (
+                                                <div className='single-image-container' style={{ display: 'inline-block' }} key={idx}>
+                                                    <img src={ite} key={idx} alt="tupian" onClick={() => {
+                                                        this.handlePreview(item.imageuris, ite)
+                                                    }} className='message-image' />
+                                                </div>
+
+                                            )
+                                        })
+                                    }
+                                </div>
+                                <span className='message-status'>{item.remarks || ''}</span>
+                                <button onClick={() => { this.showRobModal() }}
+                                    style={{ display: item.remarks === '待接单' && baseInfo.status === 301 ? '' : 'none' }}
+                                    className='message-btn-default btn-can-click'>
+                                    抢单
+                                </button>
+                                <button onClick={() => { this.operateFrom(item) }}
+                                    style={{ display: item.buttonstatus > 0 ? '' : 'none' }}
+                                    className={(item.buttonstatus > 3 ||((baseInfo.status === 40 || baseInfo.status === 99) && buttonStatusValue[item.buttonstatus]=='已确认缴费，生成保单')) ? 'message-btn-default' : 'message-btn-default btn-can-click'}>
+                                    {buttonStatusValue[item.buttonstatus]}
+                                </button>
+                                <button
+                                    onClick={() => {this.operateFrom(item)}}
+                                    className={item.buttonstatus === -3 && baseInfo.status !== 37 ? 'message-btn-default' : 'message-btn-default btn-can-click'}
+                                    style={{display: item.buttonstatus === -3 ? '' : 'none'}}
+                                >
+                                   业务员已经缴费并生成保单
+                                </button>
+                                <button
+                                    onClick={() => {this.operateFrom(item)}}
+                                    className={item.buttonstatus === -2 && baseInfo.status !== 23 ? 'message-btn-default' : 'message-btn-default btn-can-click'}
+                                    style={{display: item.buttonstatus === -2 ? '' : 'none'}}
+                                >
+                                    发送支付方式
+                                </button>
+                            </div>
+                        </div>
+
+                    </li>
+                )
+            }
+            if (item.usertype === 2) {
+                return (
+                    <li className='right-message-container' key={index}>
+
+                        <div className='send-message'>
+                            <div className='right-sender'>
+                                <span className="right-time">{item.senddate} {item.cname}</span>
+                            </div>
+                            <div className='send-message-info'>
+                                <span className='message-status' style={{ textAlign: 'right', left: '-120px' }}>{item.remarks || ''}</span>
+                                <div style={{ fontSize: '13px' }} dangerouslySetInnerHTML = {{ __html:item.info.replace(/\s+/g,'<br/>')}}></div>
+                                {
+                                    item.coverageInfo && item.coverageInfo.length > 0
+                                    ? item.coverageInfo.map((ite, idx) => {
+                                        return(<div key={idx}>{ite.info}</div>)
+                                      })
+                                    : null  
+                                }
+                                <div className='image-container'>
+                                    {
+                                        item.imageuris && item.imageuris.length && item.imageuris.map((ite1, idx1) => {
+                                            return (
+                                                <div className='single-image-container' style={{ display: 'inline-block' }} key={idx1}>
+                                                    <img src={ite1} key={idx1} alt="tupian" onClick={() => {
+                                                        this.handlePreview(item.imageuris, ite1)
+                                                    }} className='message-image' />
+                                                </div>
+                                            )
+                                        })
+                                    }
+                                </div>
+                                <button
+                                    onClick={() => {this.operateFrom(item)}}
+                                    className={item.buttonstatus > 3 ? 'message-btn-default' : 'message-btn-default btn-can-click'}
+                                    style={{display: item.buttonstatus > 0 ? '' : 'none'}}
+                                >
+                                    {buttonStatusValue[item.buttonstatus]}
+                                </button>
+                                {/* 报价： 确认此报价  */}
+                                <button
+                                    onClick={() => {this.operateFrom(item)}}
+                                    className={item.buttonstatus === -1 && baseInfo.status !== 2 ? 'message-btn-default' : 'message-btn-default btn-can-click'}
+                                    style={{display: item.checkStatus === 1 && item.buttonstatus === -1 ? '' : 'none'}}
+                                >
+                                    确认此报价
+                                </button>
+                                {/* 缴费对应： 发送支付方式 */}
+                                <button
+                                    onClick={() => {this.operateFrom(item)}}
+                                    className={item.buttonstatus === -2 && baseInfo.status !== 23 ? 'message-btn-default' : 'message-btn-default btn-can-click'}
+                                    style={{display: item.buttonstatus === -2 ? '' : 'none'}}
+                                >
+                                    发送支付方式
+                                </button>
+                                {/* 缴费对应： 选择支付方式 */}
+                                <button
+                                    onClick={() => {this.operateFrom(item)}}
+                                    className={(item.buttonstatus === -3)  && baseInfo.status !== 37 ? 'message-btn-default' : 'message-btn-default btn-can-click'}
+                                    style={{display: item.buttonstatus === -3 ? '' : 'none'}}
+                                >
+                                    业务员已经缴费并生成保单
+                                </button>
+                                
+                                <a
+                                    onClick={() => {this.insFrom(item, messageList, 11)}}
+                                   
+                                    style={{'marginRight':'10px',display: (((baseInfo.status == 40 && buttonStatusValue[item.buttonstatus]=='保单已完成' || buttonStatusValue[item.buttonstatus]=='完成保单') || item.buttonstatus === 6)  && (item.info.indexOf('交强险保单号') > -1)) ? '' : 'none'}}
+                                >录入交强保单</a>
+                                <a
+                                    onClick={() => { this.insFrom(item, messageList, 10) }}
+                                    
+                                    style={{display: (((baseInfo.status == 40 && buttonStatusValue[item.buttonstatus]=='保单已完成' || buttonStatusValue[item.buttonstatus]=='完成保单') || item.buttonstatus === 6) && (item.info.indexOf('商业险保单号') > -1)) ? '' : 'none'}}
+                                >录入商业保单</a>
+                            </div>
+                        </div>
+                        <div className='avatar-container'>
+                            <div className='div-avatar'>
+                                <img src={customer} alt="" className='avatar-iamge' />
+                            </div>
+                        </div>
+                    </li>
+                )
+            }
+        });
         return (
-            <div className='content-wrapper'>
+            <div className='content-wrapper' onClick={this.closePopover}>
                 <div className='content-container'>
                     <div className='left-container'>
-                        <Header baseInfo={baseInfo} />
+                        <div className='header'>
+                            <div>
+                                <span className='name'>{baseInfo.licenseNo || ''}</span>
+                                {/* <div className='check-status-container'>
+                                    <div className='check-status-item'><img className='check-status-image' src={baseInfo.confirImage && baseInfo.confirImage.indexOf('1') > -1 ? chooseActive : choose} alt="" /><span className='check-status-span' style={{ color: baseInfo.confirImage && baseInfo.confirImage.indexOf('1') > -1 ? '#108ee9' : '#000' }}>行驶证正面已核对</span></div>
+                                    <div className='check-status-item'><img className='check-status-image' src={baseInfo.confirImage && baseInfo.confirImage.indexOf('2') > -1 ? chooseActive : choose} alt="" /><span className='check-status-span' style={{ color: baseInfo.confirImage && baseInfo.confirImage.indexOf('2') > -1 ? '#108ee9' : '#000' }}>行驶证反面已核对</span></div>
+                                    <div className='check-status-item'><img className='check-status-image' src={baseInfo.confirImage && baseInfo.confirImage.indexOf('3') > -1 ? chooseActive : choose} alt="" /><span className='check-status-span' style={{ color: baseInfo.confirImage && baseInfo.confirImage.indexOf('3') > -1 ? '#108ee9' : '#000' }}>身份证正面已核对</span></div>
+                                    <div className='check-status-item'><img className='check-status-image' src={baseInfo.confirImage && baseInfo.confirImage.indexOf('4') > -1 ? chooseActive : choose} alt="" /><span className='check-status-span' style={{ color: baseInfo.confirImage && baseInfo.confirImage.indexOf('4') > -1 ? '#108ee9' : '#000' }}>身份证反面已核对</span></div>
+                                </div> */}
+                            </div>
+                            <span className='status'>当前状态: <span>{this.formStatus(baseInfo.status)}</span></span>
+                        </div>
                         <div className='meassge-container'>
                             <Scrollbars ref="scrollbars">
-                                <Message messageList={messageList} baseInfo={baseInfo} handlePreview={this.handlePreview} operateFrom={this.operateFrom} insFrom={this.insFrom} />
+                                <ul id='message-content'>
+                                    {message}
+                                </ul>
                             </Scrollbars>
                         </div>
-                        <Footer ref='footer' baseInfo={baseInfo} abOperate={this.abOperate} replyRemark={this.replyRemark} alwaysUseReplay={this.alwaysUseReplay} showSendImage={this.showSendImage} />
+                        <div className='footer-container'>
+                            {
+                                isShowOperate
+                                ? <Row className='get-price-contianer'>
+                                    {
+                                        baseInfo.supplierList && baseInfo.supplierList.length
+                                        ? <Col style={{float: 'left','borderRight': 'solid 1px #eee','padding':'0px 10px'}}>
+                                            <span className='title'>客户已指定保司：</span>
+                                            {
+                                                baseInfo.supplierList.map((item, index) => {
+                                                    return (
+                                                        <Tooltip placement="top" title='选择报价工号' key={index}>
+                                                            <div className='insurance-container' onClick={() => {this.showChoose(item)}}>
+                                                                <img src={item.icon} className='icon'/>
+                                                                <span className='insurance-name'>{item.name}</span>
+                                                            </div>
+                                                        </Tooltip>
+                                                    )
+                                                })
+                                            }
+                                            <div className='down-arrow'></div>
+                                        </Col>
+                                        : null
+                                    }
+                                    <Col style={{float: 'left','padding':'0px 10px'}}>
+                                        {/* <Icon type="setting" className='set-icon' onClick={this.showSettingGuide} /> */}
+                                        <span className='title'>常用工号：</span>
+                                        {
+                                            jobnoList && jobnoList.length
+                                            ?  <div style={{display: 'inline-block'}}>
+                                                {
+                                                    jobnoList.slice(0, 2).map((item, index) => {
+                                                        return (
+                                                            <Tooltip placement="top" title='点击去报价' key={index}>
+                                                                <div className='insurance-container' onClick={() => {this.toAiQuote(item)}}>
+                                                                    <img src={item.icon} className='icon'/>
+                                                                    <span className='insurance-name'>{item.name}</span>
+                                                                </div>
+                                                            </Tooltip>
+                                                        )
+                                                    })
+                                                }
+                                                {
+                                                    jobnoList.length > 2
+                                                    ? <div className='popover-modal insurance-container'>
+                                                    <Tooltip placement="top" title='更多工号'><Icon type="ellipsis more-icon" onClick={(e) => {this.showJobnoModal(e)}} /></Tooltip>
+                                                        {
+                                                            isShowJobnoModal && jobnoList.length > 2
+                                                            ? <div className='popover-content'>
+                                                                <div className='popover-title'>常用工号</div>
+                                                                <div className='always-use-content'>
+                                                                {
+                                                                    jobnoList.slice(2, jobnoList.length).map((item, index) => {
+                                                                        return (
+                                                                            <div key={index} className='item-content' onClick={() => {this.toAiQuote(item)}}>
+                                                                                <img src={item.icon} className='content-icon' alt=""/>
+                                                                                {item.name}
+                                                                            </div>
+                                                                        )
+                                                                    }) 
+                                                                }
+
+                                                                </div>
+                                                            </div>
+                                                            : null
+                                                        }
+                                                        {
+                                                            isShowJobnoModal
+                                                            ? <div className='bottom-triangle'></div>
+                                                            : null
+                                                        } 
+                                                    </div>
+                                                    : null
+                                                    
+                                                }
+                                                
+                                            </div>
+                                            : <span className='empty-tip'>设置常用保险公司工号可进行快速报价</span>
+                                        }
+                                    
+                                    </Col>
+                                    <Col style={{float: 'right'}}>
+                                        <div className='right-container'>
+                                            <Tooltip placement="top" title='点击设置常用工号'>
+                                                <Icon type="setting" style={{'paddingRight':'10px'}} className='set-icon' onClick={this.toHome} />
+                                            </Tooltip>
+                                            <div className='ver-line'></div>
+                                            {/* <div className="right-item"><Icon type="setting set-icon" />设置常用保司</div> */}
+                                            {/* <div className='right-item active'>常用保司</div> */}
+                                            <div className='popover-modal' style={{padding: '0px 10px',width:'auto'}}>
+                                                {/* <Icon type="ellipsis more-icon" onClick={this.showJobnoModal} /> */}
+                                                <div className='right-item active' onClick={(e) => {this.showInsuranceModal(e)}}>常用保司</div>
+                                                {
+                                                    isShowInsuranceModal
+                                                    ? <div className='popover-content' style={{bottom: '40px'}}>
+                                                        <div className='popover-title'>常用保司</div>
+                                                        <div className='always-use-content'>
+                                                        {
+                                                            allInsuranceCp && allInsuranceCp.length
+                                                            ? allInsuranceCp.map((item, index) => {
+                                                                return (
+                                                                    <div key={index} className='item-content' onClick={() => {this.showChoose(item)}}>
+                                                                        <img src={item.imageUrl} className='content-icon' alt=""/>
+                                                                        {item.name}
+                                                                    </div>
+                                                                )
+                                                            }) 
+                                                            : <span style={{color: '#ccc'}}>暂未配置常用保司</span>
+                                                        }
+                                                        </div>
+                                                    </div>
+                                                    : null
+                                                }
+                                                {
+                                                    isShowInsuranceModal
+                                                    ? <div className='bottom-triangle' style={{bottom: '40px'}}></div>
+                                                    : null
+                                                } 
+                                            </div>
+                                            <div className='ver-line'></div>
+                                            <div className='right-item active'  style={{padding: '0px 10px',width:'auto'}} onClick={this.btn1Click}>体验快速报价</div>
+                                        </div>
+                                    </Col>
+                                </Row>
+                                : null
+                            }
+                            <div className='always-container'>
+                                <div className='left'>
+                                    <img className='left-icon' src={sendImage} onClick={this.showSendImage}></img>
+                                    <img className='left-icon' src={isShowOperate ? operateIconActive : operateIcon} onClick={this.showOperate}></img>
+                                    <img className='left-icon' src={abIcon} onClick={this.abOperate}></img>
+                                </div>
+                                <Dropdown  overlay={menu} placement="bottomRight">
+                                    <div className='always-use'>
+                                        <span style={{ color: '#666666' }}>快捷回复</span> <Icon type="down" />
+                                    </div>
+                                </Dropdown>
+                            </div>
+                            <div className='input-container'>
+                                <textarea ref='reply' className='input-content' type="text" cols='7'
+                                    placeholder=""
+                                    onKeyDown={(e) => { this.keyDown(e) }}>
+                                </textarea>
+                                <div className='operate-container'>
+                                    <div className='left' onClick={this.btnClick}>
+                                        <span>插入报价</span>
+                                    </div>
+                                    <div className='right'>
+                                        <button className='btn-default' onClick={() => { this.replyRemark() }}>回复</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div className='right-container'>
-                        <Tabs defaultActiveKey="1">
+                        <Tabs defaultActiveKey="1" onChange={this.changeTab}>
                             <TabPane tab={<span className='tab-container'><i className='iconfont icon-kehu tab-icon' /><span>基本信息</span></span>} key="1">
                                 <BaseInfo showRobModal={this.showRobModal} allInsuranceCp={allInsuranceCp} btnClick={this.btn1Click} baseData={baseInfo} />
                             </TabPane>
@@ -1177,22 +1847,20 @@ export default class Index extends React.Component {
                             <TabPane tab={<span className='tab-container'><i className='iconfont icon-tupian-copy tab-icon' /><span>聊天图片</span></span>} key="3">
                                 <ChatImageList priceId={priceId} handlePreview={this.handlePreview} allImageList={allImageList} />
                             </TabPane>
-                            <TabPane tab={<span className='tab-container'><i className='iconfont icon-shizhong tab-icon' /><span>历史报价</span></span>} key="4">
-                                <HistoryList status={baseInfo.status} usePrice={this.usePrice} historicalPriceList={historicalPriceList} />
+                            <TabPane tab={<span className='tab-container'><i className='iconfont icon-shizhong tab-icon' /><span>报价记录</span></span>} key="4">
+                                {/* <HistoryList status={baseInfo.status} usePrice={this.usePrice} historicalPriceList={historicalPriceList} /> */}
+                                <EnquireRecord recordList={recordList} usePrice={this.usePrice} />
                             </TabPane>
                         </Tabs>
                     </div>
                 </div>
-                <MpModal title='1111'>
-                    <div>222</div>
-                </MpModal>
                 <SendImage isSendImage={isSendImage} hideSendImage={this.hideSendImage} sendImage={this.sendImage}></SendImage>
                 <FormModal ref='formModal' priceId={priceId} isShowModal={isShowModal} submitForm={this.submitForm}
                     onCancel={this.onCancel} baseData={baseInfo} />
-                <SubmitOffer ref="submitOffer" allInsuranceCp={allInsuranceCp} queryPriceInfo={queryPriceInfo} priceId={priceId} closeSubmit={this.closeSubmit} isShowSubmit={isShowSubmit}
+                <SubmitOffer ref="submitOffer" clearQueryPriceInfo={this.clearQueryPriceInfo} allInsuranceCp={allInsuranceCp} queryPriceInfo={queryPriceInfo} priceId={priceId} closeSubmit={this.closeSubmit} isShowSubmit={isShowSubmit}
                     baseData={baseInfo} getPrice={this.getPrice} changesupplierIdToName={this.changesupplierIdToName} refreshData={refreshData} />
-                <div className='info-modal' style={{ display: previewVisible ? 'block' : 'none' }} onClick={this.hideCheckModal}>
-                    <CheckModal getEnquireDetail={this.getEnquireDetail} hideCheckModal={this.hideCheckModal} priceId={priceId} imageSrc={previewImage} imagesInArr={imagesInArr} baseInfo={baseInfo}/>
+                <div className='info-modal' style={{ display: previewVisible ? 'block' : 'none', zIndex: '11' }} onClick={this.hideCheckModal}>
+                    <CheckModal ref='checkModal' getEnquireDetail={this.getEnquireDetail} hideCheckModal={this.hideCheckModal} priceId={priceId} imageSrc={previewImage} imagesInArr={imagesInArr} baseInfo={baseInfo}/>
                 </div>
                 <div className='bg-container' style={{ display: isShowBg ? 'block' : 'none', backgroundColor: 'rgba(7, 17, 27, 0.4)' }}>
                     <div className='bg-content'>
@@ -1216,7 +1884,7 @@ export default class Index extends React.Component {
                                             addressList.map((item, index) => {
                                                 return <Radio className='radio-style' value={index} key={index}>{item.address} {item.phone} {item.workTime}</Radio>
                                             })
-                                          )
+                                        )
                                         : <div style={{margin: '20px auto', fontSize: '16px'}}>暂未配置自取地址</div>
                                     }
                                 </RadioGroup>
@@ -1355,6 +2023,28 @@ export default class Index extends React.Component {
                         </div>
                     </div>
                 </div>
+                <div className='abnormal-wrapper' style={{display: isShowSettingGuide ? 'block' : 'none'}}>
+                    <div className='abnormal-container'>
+                        <div className='abnormal-title-contianer'>
+                            <span>设置常用保司</span>
+                            <img src={closeIcon} alt="" className='close' onClick={this.cancalSettingGuide}/>
+                        </div>
+                        <div className='setting-container'>
+                            <img style={{width: '100%'}} src={guide}/>
+                            <button className='setting-btn' onClick={this.toHome}>去设置</button>
+                        </div>
+                    </div>
+                </div>
+                {
+                    isShowJobNo
+                    ? <ChooseJobNo toAiQuote={this.toAiQuote} chooseList={chooseList} chooseTitle={chooseTitle} cancelChoose={this.cancelChoose}/>
+                    : null
+                }
+                {
+                    isShowIframe
+                    ? <Iframe iframeSrc={iframeSrc} showModalInfo={this.showModalInfo} closeIframe={this.closeIframe}/>
+                    : null
+                }
             </div>
         )
     }

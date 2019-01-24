@@ -9,6 +9,7 @@ import {
   transfer_search,
   close_order
 } from '../services/index';
+const name = '订单异常处理'
 export default class AbOperate extends React.Component {
   constructor(props) {
     super(props);
