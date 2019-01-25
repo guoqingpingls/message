@@ -12,11 +12,8 @@ export default class Message extends React.Component{
   handlePreview = (imageuri, ite) => {
     this.props.handlePreview(imageuri, ite);
   }
-  operateFrom = (item) => {
-    this.props.operateFrom(item);
-  }
-  insFrom = (item, messageList, m) => {
-    this.props.insFrom(item, messageList, m)
+  operateFrom = (item, key) => {
+    this.props.operateFrom(item, key);
   }
   render () {
     let {messageList, baseInfo} = this.props;
@@ -56,7 +53,7 @@ export default class Message extends React.Component{
                     item.btnArray && item.btnArray.length
                     ? item.btnArray.map((ite, idx) => {
                       return (
-                        <button key={idx} onClick={() => { this.operateFrom(item) }}
+                        <button key={idx} onClick={() => { this.operateFrom(item, ite.key) }}
                           className={ite.btnClassName}>
                           {ite.btnText}
                         </button>
@@ -64,34 +61,6 @@ export default class Message extends React.Component{
                     })
                     : null
                   }
-                  {/* {
-                    item.buttonstatus > 0
-                    ? <button onClick={() => { this.operateFrom(item) }}
-                      style={{ display: item.buttonstatus > 0 ? '' : 'none' }}
-                      className={item.buttonstatus > 3 ? 'message-btn-default' : 'message-btn-default btn-can-click'}>
-                      {buttonStatusValue[item.buttonstatus]}
-                    </button>
-                    : null
-                  } */}
-                  {/* <button onClick={() => { this.operateFrom(item) }}
-                    style={{ display: item.buttonstatus > 0 ? '' : 'none' }}
-                    className={item.buttonstatus > 3 ? 'message-btn-default' : 'message-btn-default btn-can-click'}>
-                    {buttonStatusValue[item.buttonstatus]}
-                  </button> */}
-                  {/* <button
-                    onClick={() => {this.operateFrom(item)}}
-                    className={item.buttonstatus === -3 && baseInfo.status !== 37 ? 'message-btn-default' : 'message-btn-default btn-can-click'}
-                    style={{display: item.buttonstatus === -3 ? '' : 'none'}}
-                  >
-                    业务员已经缴费并生成保单
-                  </button>
-                  <button
-                    onClick={() => {this.operateFrom(item)}}
-                    className={item.buttonstatus === -2 && baseInfo.status !== 23 ? 'message-btn-default' : 'message-btn-default btn-can-click'}
-                    style={{display: item.buttonstatus === -2 ? '' : 'none'}}
-                  >
-                    发送支付方式
-                  </button> */}
               </div>
             </div>
           </li>
@@ -131,7 +100,7 @@ export default class Message extends React.Component{
                   item.btnArray && item.btnArray.length
                   ? item.btnArray.map((ite, idx) => {
                     return (
-                      <button key={idx} onClick={() => { this.operateFrom(item) }}
+                      <button key={idx} onClick={() => { this.operateFrom(item, ite.key)}}
                         className={ite.btnClassName}>
                         {ite.btnText}
                       </button>

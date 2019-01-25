@@ -75,6 +75,7 @@ export default class PayType extends React.Component {
   };
   // 发送支付方式
   sendPayType = () => {
+    let self = this;
     let {payType, fileList, payLink} = this.state;
     let {priceId, defaultImageUri, cid, baseInfo} = this.props;
     let params = {

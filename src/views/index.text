@@ -4,5 +4,5 @@
 * status: 2  buttonstatus:　-1  checkStatus: 1  确认报价
 * status：23 buttonstatus:  -2  发送支付方式
 * status: 37 buttonstatus:  -3  业务员已缴费并生成保单
-* status: 40 buttonstatus:   3  完成保单
+* status: 40 buttonstatus:   3  完成保单 交强录单  商业录单
 *

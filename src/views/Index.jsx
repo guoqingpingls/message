@@ -268,7 +268,19 @@ export default class Index extends React.Component{
     if (status === 40 && item.buttonstatus === 3) {
       btnArray.push({
         btnClassName: 'message-btn-default btn-can-click',
-        btnText: '完成保单'
+        btnText: '完成保单',
+        key: 'COMPLETE_ORDER'
+      })
+    }
+    if (item.buttonstatus === 3 || item.buttonstatus === 6) {
+      btnArray.push({
+        btnClassName: 'message-btn-default btn-can-click',
+        btnText: '交强录单',
+        key: 'CI_RECORD'
+      },{
+        btnClassName: 'message-btn-default btn-can-click',
+        btnText: '商业录单',
+        key: 'BI_RECORD'
       })
     }
     return btnArray;
@@ -339,7 +351,7 @@ export default class Index extends React.Component{
     })
   }
   // 消息列表button操作
-  operateFrom = (item) => {
+  operateFrom = (item, key) => {
     let self = this;
     let btnStatus = item.buttonstatus;
     let { baseInfo, priceId, cid } = this.state;
@@ -386,7 +398,7 @@ export default class Index extends React.Component{
       });
     }
     // 完成保单
-    if (baseInfo.status === 40 && item.buttonstatus === 3) {
+    if (baseInfo.status === 40 && item.buttonstatus === 3 && key === 'COMPLETE_ORDER') {
       confirm({
         title: '该操作仅当是业务员没有按照标准流程操作，您替业务员完成的一些行为，您确认要替业务员进行操作么？（例如：业务员在微信做了支付了，在微信确认报价了...）',
         okText: "确认",
@@ -397,7 +409,78 @@ export default class Index extends React.Component{
         onCancel() {}
       });
     }
+    // 交强录单
+    if (key === 'CI_RECORD') {
+      this.recordSheet(item.info.split(','), 11)
+    }
+    // 商业录单
+    if (key === 'BI_RECORD') {
+      this.recordSheet(item.info.split(','), 10)
+    }
   };
+  // 录单
+  recordSheet = (infos, m) => {
+    let {messageList, baseInfo} = this.state
+    let self = this;
+    let customerId = baseInfo.usersDetail.customerId;
+    let userId = baseInfo.userid;
+    let configs = messageList.reverse().filter(function (item) { return item.remarks == '已确认此报价' });
+    let params = {
+        PayType: baseInfo.paymentMethod, // 1 业务员 2 代理
+        SalemanId: customerId, //业务员ID
+        Source: 3, //3：小程序报价，2，直连
+        AutomaticType: 18, //小程序自动落单
+        UnNav: 1,  //页面不需要左侧菜单
+        InsuranceType: m, //10:商业，11：交强
+        SalesmanSettleRate: 0,  //业务员保单手续费比例
+        SalesmanVVTaxSettleRate: 0, //业务员车船税手续费比例
+        insFeeType: 2, //2全费，1净费
+        UserId: userId,     //通知给的用户id
+        AutoSettlement: 0  //是否自动结佣，展示拿不到
+    };
+    confirm({
+      title: '如果系统开启了人工询价保单自动结算模式，录单后将自动执行下游结算操作，请确保录入的费用信息和给业务员沟通的费用信息一致，以免后续产生不必要的麻烦，您确认要继续操作么？',
+      okText: "确认",
+      cancelText: "取消",
+      onOk() {
+        if (m == 10) {
+          let info = infos.filter(function (item) { return item.indexOf('商业险保单号') > -1 });
+          if (info && info.length > 0) {
+            params['InsuranceNo'] = info[0].substring(info[0].lastIndexOf('单号') + 2);  //商业单号
+          }
+        } else if (m == 11) {
+          let info = infos.filter(function (item) { return item.indexOf('交强险保单号') > -1 });
+          if (info && info.length > 0) {
+            params['InsuranceNo'] = info[0].substring(info[0].lastIndexOf('单号') + 2);  //交强险单号
+          }
+        }
+        if (configs && configs.length > 0) {
+          let config = configs[0].config;
+          if (config && config.indexOf('{') > -1) {
+            config = JSON.parse(config);
+            if (m == 10) { //商业险
+              params['SalesmanSettleRate'] = config.showbicommission;
+
+            } else if (m == 11) { //交强险
+              params['SalesmanSettleRate'] = config.showcicommission;
+              params['SalesmanVVTaxSettleRate'] = config.showcarshiptax;
+            }
+            if (config.isSeparate) {
+              params['insFeeType'] = 1;
+            } else {
+              params['insFeeType'] = 2;
+            }
+          }
+        }
+        let str = JSON.stringify(params);
+        let currUrl = ('http://' + location.host);
+        let url = currUrl + '/Policy/Add?p=' + str;
+        window.open(url, null, "dialogWidth=100%;dialogHeight=520px;scroll=yes;status=0");
+      },
+      onCancel() {
+      },
+    });
+  }
   finishOrder = () => {
     let {priceId, cid, baseInfo} = this.state;
     let self = this;
@@ -426,6 +509,7 @@ export default class Index extends React.Component{
       id: item.id,
       cid: cid
     }
+    let self = this;
     confirm_price(params).then((res) => {
       let msgContent = {};
       msgContent.type = "IM";
@@ -533,17 +617,17 @@ export default class Index extends React.Component{
   queryInsuredPrice = () => {
     let {baseInfo} = this.state;
     let params = {
-        LicenseNo: baseInfo.licenseNo,
-        QueryType: 0,
-        InsName: '',
-        PartnerId: baseInfo.partnerId,
-        PriceType: 2,
-        addStartTime: date().add(-3, 'd').format('YYYY-MM-DD'),
-        addEndTime: date().format('YYYY-MM-DD hh:mm:ss'),
-        Paging: {
-          TakeCount: 10,
-          SkipCount: 0
-        }
+      LicenseNo: baseInfo.licenseNo,
+      QueryType: 0,
+      InsName: '',
+      PartnerId: baseInfo.partnerId,
+      PriceType: 2,
+      addStartTime: date().add(-3, 'd').format('YYYY-MM-DD'),
+      addEndTime: date().format('YYYY-MM-DD hh:mm:ss'),
+      Paging: {
+        TakeCount: 10,
+        SkipCount: 0
+      }
     }
     let self = this;
     axios({
@@ -682,7 +766,7 @@ export default class Index extends React.Component{
             <Header baseInfo={baseInfo} />
             <div className='meassge-container'>
               <Scrollbars ref="scrollbars">
-                <Message messageList={messageList} baseInfo={baseInfo} handlePreview={this.handlePreview} operateFrom={this.operateFrom} insFrom={this.insFrom} />
+                <Message messageList={messageList} baseInfo={baseInfo} handlePreview={this.handlePreview} operateFrom={this.operateFrom} />
               </Scrollbars>
             </div>
             <Footer
