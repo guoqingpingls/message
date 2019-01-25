@@ -17,7 +17,7 @@ import CheckModal from './CheckModal';
 import SubmitPrice from './SubmitPrice';
 import SendImageModal from './SendImageModal';
 import GeneratePolicy from './GeneratePolicy';
-import { openNavUrl, date, translateIdToName } from '../util/util.js';
+import { openNavUrl, date, translateIdToName, insuranceIdToName, isEmptyObject } from '../util/util.js';
 import {
     get_price_detail, //获取询价基本信息
     get_message_list, //获取消息列表
@@ -27,7 +27,6 @@ import {
     finish_policy,   // 完成保单
     submit_to_get_price,    // 提交报价
     reply_remark_api,    // 回复
-    // get_historical_price,    // 获取历史报价
     get_insurance_cp_list,      //获取保险公司列表
     transfer_search,    //转接查询
     transfer_to_others,         // 转接
@@ -82,15 +81,24 @@ export default class Index extends React.Component{
       isShowToast: false,   // 是否显示提示
       recordList: [],  // 报价记录
       chatImageList: [],  // 聊天图片
+      chooseTitle: [],  // 常用保司 name
+      isShowJobNo: false,
+      jobnoList: [],
+      chooseList: []
     };
   }
-  componentDidMount () {
+  componentWillMount () {
     // 从地址栏获取priceId cid
-    let {priceId, cid} = this.props.location.query;
+    let {priceId, cid, pId} = this.props.location.query;
     this.state.priceId = priceId;
     this.state.cid = cid;
+    this.state.pId = pId;
+  }
+  componentDidMount () {
     this.getPriceDetail()
     this.getMessageList()
+    this.getAllInsuranceCp()
+    this.getJobNo()
     this.refs.scrollbars.scrollToBottom();
   }
   componentDidUpdate() {
@@ -102,12 +110,22 @@ export default class Index extends React.Component{
     get_price_detail(priceId).then((res) => {
       if (res.returnCode === 0) {
         if (!baseInfo.status) {
+
           self.state.baseInfo = res.dtoList[0]
           self.getMessageList()
         }
         if (self.state.isFirstGet) {
-          self.getAllInsuranceCp(res.dtoList[0].partnerId);
           self.state.isFirstGet = false
+        }
+        if (!!res.dtoList[0].supplierIdList) {
+          let supplierList = res.dtoList[0].supplierIdList.map((item) => {
+            return ({
+              name: insuranceIdToName(item),
+              id: item,
+              icon:  `http://f2.ananyun.net/BakSite/Resources/img/logo/small/${item}.jpg`
+            })
+          })
+          res.dtoList[0].supplierList = supplierList
         }
         self.setState({
           baseInfo: res.dtoList[0]
@@ -125,44 +143,94 @@ export default class Index extends React.Component{
     let self = this;
     get_message_list(priceId).then((res) => {
       if (res.returnCode === 0 && res.dtoList && res.dtoList.length) {
-          let messageList = res.dtoList.map((item) => {
-            if (item.config && item.config.length > 0) {
-              let temp = JSON.parse(item.config);
-              if (temp.coverageList && temp.coverageList.length > 0) {
-                  let tmpCoverage = JSON.parse(temp.coverageList);
-                  let resultCoverage = []
-                  tmpCoverage.map((ite) => {
-                    if (ite.InsDetailId == '10501') {
-                      return;
-                    }
-                    if (ite.InsDetailId == '20201') {
-                      let tip = ite.flag == 1 ? '(国产玻璃)' : '(进口玻璃)'
-                      let InsuredPremium = ite.InsuredPremium && Number(ite.InsuredPremium) > 0 ? '——保费：' + Number(ite.InsuredPremium).toFixed(2) : ''
-                      let info = ite.ins + tip + InsuredPremium
-                      resultCoverage.push({
-                        info: info
-                      })
-                    } else {
-                      let amount = ite.Amount && Number(ite.Amount) > 0 ? `(${Number(ite.Amount).toFixed(2)})` : ''
-                      let tip = ite.InsDetailId < 30000 ? amount : '不计免赔'
-                      let InsuredPremium = ite.InsuredPremium && Number(ite.InsuredPremium) > 0 ? '——保费: ' + Number(ite.InsuredPremium).toFixed(2) : ''
-                      let info = ite.ins + tip + InsuredPremium
-                      resultCoverage.push({
-                        info: info
-                      })
-                    }
-                  })
-                  item.coverageInfo = resultCoverage;
+        let messageList = res.dtoList.map((item) => {
+          if (item.config && item.config.length > 0) {
+            let temp = JSON.parse(item.config);
+            if (temp.coverageList && temp.coverageList.length > 0) {
+              let tmpCoverage = JSON.parse(temp.coverageList);
+              let resultCoverage = []
+              tmpCoverage.map((ite) => {
+                if (ite.InsDetailId == '10501') {
+                  return;
                 }
-              }
-              // 消息操作按钮
-              item.btnArray = self.getBtnArray(item, baseInfo.status)
-              return item
-          })
-          console.log(messageList)
+                if (ite.InsDetailId == '20201') {
+                  let tip = ite.flag == 1 ? '(国产玻璃)' : '(进口玻璃)'
+                  let InsuredPremium = ite.InsuredPremium && Number(ite.InsuredPremium) > 0 ? '——保费：' + Number(ite.InsuredPremium).toFixed(2) : ''
+                  let info = ite.ins + tip + InsuredPremium
+                  resultCoverage.push({
+                    info: info
+                  })
+                } else {
+                  let amount = ite.Amount && Number(ite.Amount) > 0 ? `(${Number(ite.Amount).toFixed(2)})` : ''
+                  let tip = ite.InsDetailId < 30000 ? amount : '不计免赔'
+                  let InsuredPremium = ite.InsuredPremium && Number(ite.InsuredPremium) > 0 ? '——保费: ' + Number(ite.InsuredPremium).toFixed(2) : ''
+                  let info = ite.ins + tip + InsuredPremium
+                  resultCoverage.push({
+                    info: info
+                  })
+                }
+              })
+              item.coverageInfo = resultCoverage;
+            }
+          }
+          // 消息操作按钮
+          item.btnArray = self.getBtnArray(item, baseInfo.status)
+          return item
+        })
+        console.log(messageList)
+        self.setState({
+          messageList: messageList.reverse()
+        })
+      }
+    })
+  }
+  // 获取工号 1. 保险公司点击显示 2. 首页显示
+  getJobNo = (insuranceItem) => {
+    let cid = this.state.cid || this.props.location.query;
+    let params = `?customerId=${cid}`
+    let isInsurance = false
+    if (insuranceItem && isEmptyObject(insuranceItem)) {
+      isInsurance = true
+      params = `${params}&supplierId=${insuranceItem.id}&all=1`
+    }
+    let self = this;
+    axios({
+      method: 'get',
+      url: `http://insbak.ananyun.net/zongan/GetSettingJobNos${params}`
+      // url: `http://pre2.insbak.ananyun.net/zongan/GetSettingJobNos${params}`
+    }).then(({data}) => {
+      if (data.ResultCode === 1 && data.jobNos && data.jobNos.length) {
+        let  jobnoList = data.jobNos.map((item) => {
+          if (isInsurance) {
+            return ({
+              id: item.SupplierId,
+              name: item.Remark && item.Remark.length ? `${item.Remark}-${item.LoginName}` : item.LoginName,
+              icon: `http://f2.ananyun.net/BakSite/Resources/img/logo/small/${item.SupplierId}.jpg`,
+              PartnerId: item.PartnerId,
+              jobnoid: item.JobNOId
+            })
+          } else {
+            let LoginName = item.Remark && item.Remark.length ? `-${item.Remark}-${item.LoginName}` :`-${item.LoginName}`
+            return ({
+              id: item.SupplierId,
+              name: item.Partner.PartnerName + LoginName,
+              icon: `http://f2.ananyun.net/BakSite/Resources/img/logo/small/${item.SupplierId}.jpg`,
+              PartnerId: item.PartnerId,
+              jobnoid: item.JobNOId
+            })
+          }
+        })
+        if (isInsurance) {
           self.setState({
-            messageList: messageList.reverse()
+            chooseTitle: insuranceItem.name,
+            isShowJobNo: true,
+            chooseList: jobnoList
           })
+        } else {
+          self.setState({
+            jobnoList: jobnoList
+          })
+        }
       }
     })
   }
@@ -426,10 +494,11 @@ export default class Index extends React.Component{
     }
   }
   // 获取保险公司
-  getAllInsuranceCp = (partnerId) => {
+  getAllInsuranceCp = () => {
     let tmpCpList =  []
     let self = this;
-    get_insurance_cp_list(partnerId).then((res) => {
+    let pId = this.state.pId || this.props.location.query.pId;
+    get_insurance_cp_list(pId).then((res) => {
       if (res.dtoList && res.dtoList.length) {
         res.dtoList.map((item, index) => {
           if (item.supplier.length === 0) {
@@ -445,6 +514,7 @@ export default class Index extends React.Component{
         self.setState({
           allInsuranceCp: tmpCpList
         })
+        this.state.allInsuranceCp = tmpCpList
       }
     }).catch((err) => {
       console.log('cpList: ', err)
@@ -565,6 +635,14 @@ export default class Index extends React.Component{
       this.getMessageList()
     }
   }
+  closeModal = () => {
+    this.refs.footer.closeModal()
+  }
+  closeJobNo = () => {
+    this.setState({
+      isShowJobNo: false
+    })
+  }
   render() {
     const {
       refreshData,
@@ -591,10 +669,14 @@ export default class Index extends React.Component{
       fromRecord,
       isShowToast,
       recordList,
-      chatImageList
+      chatImageList,
+      jobnoList,
+      chooseTitle,
+      isShowJobNo,
+      chooseList
     } = this.state;
     return (
-      <div className='content-wrapper'>
+      <div className='content-wrapper' onClick={this.closeModal}>
         <div className='content-container'>
           <div className='left-container'>
             <Header baseInfo={baseInfo} />
@@ -603,7 +685,24 @@ export default class Index extends React.Component{
                 <Message messageList={messageList} baseInfo={baseInfo} handlePreview={this.handlePreview} operateFrom={this.operateFrom} insFrom={this.insFrom} />
               </Scrollbars>
             </div>
-            <Footer ref='footer' openInsertModal={this.openInsertModal} baseInfo={baseInfo} abOperate={this.abOperate} replyRemark={this.replyRemark} alwaysUseReplay={this.alwaysUseReplay} showSendImage={this.showSendImage} keyDown={this.keyDown}/>
+            <Footer
+              ref='footer'
+              chooseTitle={chooseTitle}
+              isShowJobNo={isShowJobNo}
+              jobnoList={jobnoList}
+              chooseList={chooseList}
+              allInsuranceCp={allInsuranceCp}
+              priceId={priceId}
+              baseInfo={baseInfo}
+              openInsertModal={this.openInsertModal}
+              closeJobNo={this.closeJobNo}
+              getJobNo={this.getJobNo}
+              abOperate={this.abOperate}
+              replyRemark={this.replyRemark}
+              alwaysUseReplay={this.alwaysUseReplay}
+              showSendImage={this.showSendImage}
+              keyDown={this.keyDown}
+            />
           </div>
           <div className='right-container'>
             <Tabs defaultActiveKey="1" onChange={this.changeTab}>
@@ -622,7 +721,18 @@ export default class Index extends React.Component{
             </Tabs>
           </div>
         </div>
-        {/* <SendImage isSendImage={isSendImage} hideSendImage={this.hideSendImage} sendImage={this.sendImage}></SendImage> */}
+        {/* {
+          previewVisible
+          ? <CheckModal
+              getEnquireDetail={this.getEnquireDetail}
+              hideCheckModal={this.hideCheckModal}
+              priceId={priceId}
+              imageSrc={previewImage}
+              imagesInArr={imagesInArr}
+              baseInfo={baseInfo}
+            />
+          : null
+        } */}
         <div className='info-modal' style={{ display: previewVisible ? 'block' : 'none' }} onClick={this.hideCheckModal}>
           <CheckModal getEnquireDetail={this.getEnquireDetail} hideCheckModal={this.hideCheckModal} priceId={priceId} imageSrc={previewImage} imagesInArr={imagesInArr} baseInfo={baseInfo}/>
         </div>
@@ -637,7 +747,6 @@ export default class Index extends React.Component{
           ? <PayType
             title="支付方式"
             closePayType={this.closePayType}
-            // sendPayType={this.sendPayType}
             defaultImageUri={defaultImageUri}
             priceId={priceId}
             cid={cid}

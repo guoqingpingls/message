@@ -16,7 +16,13 @@ export default class BaseInfo extends React.Component{
   componentWillReceiveProps (nextProps) {
     if (nextProps.baseData && nextProps.baseData.coverageList || nextProps.allInsuranceCp !== this.props.allInsuranceCp) {
       if (nextProps.baseData.coverageList && nextProps.baseData.coverageList.length > 0) {
-        let tmpCoverageList = filterInsurance(JSON.parse(nextProps.baseData.coverageList))
+        // 返回参数为json or array
+        let tmpCoverageList
+        if (typeof nextProps.baseData.coverageList === 'string') {
+          tmpCoverageList = filterInsurance(JSON.parse(nextProps.baseData.coverageList))
+        } else {
+          tmpCoverageList = filterInsurance(nextProps.baseData.coverageList)
+        }
         this.setState({
           coverageList: tmpCoverageList,
         })
@@ -147,7 +153,7 @@ export default class BaseInfo extends React.Component{
                       <span className='base-info-title'>姓名：</span>
                       <span className='info-content'>{ baseData.carbaseinfoDto.ownername || baseData.ownerName || '' }</span>
                     </li>
-                    <li className='info-item'>
+                    <li className='info-item-container'>
                       <span className='base-info-title'>身份证号：</span>
                       <span className='info-content'>{  baseData.carbaseinfoDto.certificateno || baseData.ownerID || '' }</span>
                     </li>

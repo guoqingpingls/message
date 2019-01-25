@@ -1,8 +1,10 @@
 import React from 'react';
 import axios from 'axios';
+import ChooseJobNo from '../views/ChooseJobNo'
+import Iframe from './Iframe'
 import '../stylesheets/Footer.less';
 import {isEmptyObject} from '../util/util.js';
-import { Dropdown, Menu, Icon } from 'antd';
+import { Dropdown, Menu, Icon, Row, Col, Tooltip, Modal } from 'antd';
 import tip from '../assets/images/tip.png';
 import sendImage from '../assets/images/send-image.png';
 import operateIcon from '../assets/images/open-operate.png';
@@ -14,10 +16,26 @@ export default class Footer extends React.Component {
     super(props);
     this.state = {
       isShift: false,
-      jobnoList: [],
+      // jobnoList: [],
       isShowOperate: true,    // 显示报价栏
+      isShowJobnoModal: false,
+      isShowInsuranceModal: false,
+      isShowIframe: false,    // 显示Iframe
+      iframeSrc: '',
+      allInsuranceCp: [],
+      // isShowJobNo: false
     }
   }
+  // componentDidMount () {
+  //   this.getJobNo()
+  // }
+  // componentWillReceiveProps (nextProps) {
+  //   if (this.props.allInsuranceCp !== nextProps.allInsuranceCp) {
+  //     this.setState({
+  //       allInsuranceCp: nextProps.allInsuranceCp
+  //     })
+  //   }
+  // }
   alwaysUseReplay = () => {
     this.props.alwaysUseReplay();
   }
@@ -58,56 +76,90 @@ export default class Footer extends React.Component {
   }
   // 获取工号 1. 保险公司点击显示 2. 首页显示
   getJobNo = (insuranceItem) => {
-    let {cid} = this.props
-    let params = `?customerId=${cid}`
-    let isInsurance = false
-    if (insuranceItem && isEmptyObject(insuranceItem)) {
-      isInsurance = true
-      params = `${params}&supplierId=${insuranceItem.id}&all=1`
+    this.props.getJobNo(insuranceItem)
+  }
+  // 关闭保司 &&　选择工号 弹窗
+  closeModal = () => {
+    let {isShowJobnoModal, isShowInsuranceModal} = this.state;
+    if (isShowJobnoModal || isShowInsuranceModal) {
+      this.setState({
+        isShowJobnoModal: false,
+        isShowInsuranceModal: false
+      })
     }
-    axios({
-      method: 'get',
-      url: `http://insbak.ananyun.net/zongan/GetSettingJobNos${params}`
-      // url: `http://pre2.insbak.ananyun.net/zongan/GetSettingJobNos${params}`
-    }).then(({data}) => {
-      if (data.ResultCode === 1 && data.jobNos && data.jobNos.length) {
-        let  jobnoList = data.jobNos.map((item) => {
-          if (isInsurance) {
-            return ({
-              id: item.SupplierId,
-              name: item.Remark && item.Remark.length ? `${item.Remark}-${item.LoginName}` : item.LoginName,
-              icon: `http://f2.ananyun.net/BakSite/Resources/img/logo/small/${item.SupplierId}.jpg`,
-              PartnerId: item.PartnerId,
-              jobnoid: item.JobNOId
-            })
-          } else {
-            let LoginName = item.Remark && item.Remark.length ? `-${item.Remark}-${item.LoginName}` :`-${item.LoginName}`
-            return ({
-              id: item.SupplierId,
-              name: item.Partner.PartnerName + LoginName,
-              icon: `http://f2.ananyun.net/BakSite/Resources/img/logo/small/${item.SupplierId}.jpg`,
-              PartnerId: item.PartnerId,
-              jobnoid: item.JobNOId
-            })
-          }
-        })
-        if (isInsurance) {
-          self.setState({
-            chooseTitle: item.name,
-            isShowJobNo: true,
-            chooseList: jobnoList
-          })
-        } else {
-          self.setState({
-            jobnoList: jobnoList
-          })
-        }
-      }
+  }
+  // 显示选择工号弹窗
+  showJobnoModal = (e) => {
+    e.stopPropagation();
+    this.setState({
+      isShowJobnoModal: true,
+      isShowInsuranceModal: false
     })
   }
+  // 去ai报价
+  toAiQuote = (item) => {
+    let { baseInfo, priceId } = this.props;
+    let currUrl = ('http://' + location.host);
+    let id = item.id
+    let url = `http://insbak.ananyun.net/LitePaperOffer/AiQuote?itemid=${baseInfo.priceitemid}&priceId=${priceId}&supId=${item.id}&jobnoid=${item.jobnoid || ''}`;
+    this.setState({
+        isShowIframe: true,
+        iframeSrc: url
+    }) 
+  }
+  // 显示选择保司弹窗
+  showInsuranceModal = (e) => {
+    e.stopPropagation();
+    this.setState({
+      isShowJobnoModal: false,
+      isShowInsuranceModal: true
+    })
+  }
+  // 显示modal提示
+  showModalInfo = (message) => {
+    Modal.error({
+      title: '提示',
+      okText: '知道了',
+      content: (
+        <div>
+          <p>{message}</p>
+        </div>
+      ),
+      onOk() {},
+    });
+  }
+  // 关闭工号跳转提示
+  closeIframe = () => {
+    let {isShowIframe} = this.state;
+    this.setState({
+      isShowIframe: false
+    })
+  }
+  // 关闭工号选择弹窗
+  cancelChoose = () => {
+    this.props.closeJobNo()
+  }
+  // 常用回复
+  alwaysUseReplay = (e) => {
+    let content = e.item.props.children;
+    this.props.replyRemark(content);
+  }
   render () {
-    let {baseInfo} = this.props;
-    let {isShowOperate} = this.state;
+    let {
+      baseInfo,
+      allInsuranceCp,
+      chooseTitle,
+      isShowJobNo,
+      jobnoList,
+      chooseList
+    } = this.props;
+    let {
+      isShowOperate,
+      isShowJobnoModal,
+      isShowInsuranceModal,
+      isShowIframe,
+      iframeSrc
+    } = this.state;
     const menu = (
       <Menu onClick={this.alwaysUseReplay}>
         <Menu.Item>已收到您的询价，很高兴为你效劳！</Menu.Item>
@@ -122,6 +174,123 @@ export default class Footer extends React.Component {
     )
     return (
       <div className='footer-container'>
+        {
+          isShowOperate
+          ? <Row className='get-price-container'>
+              {
+                baseInfo.supplierList && baseInfo.supplierList.length
+                ? <Col style={{float: 'left','borderRight': 'solid 1px #eee','padding':'0px 10px'}}>
+                    <span className='title'>客户已指定保司：</span>
+                    {
+                      baseInfo.supplierList.map((item, index) => {
+                        return (
+                          <Tooltip placement="top" title='选择报价工号' key={index}>
+                            <div className='insurance-container' onClick={() => {this.getJobNo(item)}}>
+                              <img src={item.icon} className='icon'/>
+                              <span className='insurance-name'>{item.name}</span>
+                            </div>
+                          </Tooltip>
+                        )
+                      })
+                    }
+                    <div className='down-arrow'></div>
+                </Col>
+                : null
+              }
+              <Col style={{float: 'left','padding':'0px 10px'}}>
+                <span className='title'>常用工号：</span>
+                {
+                  jobnoList && jobnoList.length
+                  ? <div style={{display: 'inline-block'}}>
+                      {
+                        jobnoList.slice(0, 2).map((item, index) => {
+                          return (
+                            <Tooltip placement="top" title='点击去报价' key={index}>
+                              <div className='insurance-container' onClick={() => {this.toAiQuote(item)}}>
+                                <img src={item.icon} className='icon'/>
+                                <span className='insurance-name'>{item.name}</span>
+                              </div>
+                            </Tooltip>
+                          )
+                        })
+                      }
+                      {
+                        jobnoList.length > 2
+                        ? <div className='popover-modal insurance-container'>
+                            <Tooltip placement="top" title='更多工号'><Icon type="ellipsis" className="more-icon" onClick={(e) => {this.showJobnoModal(e)}} /></Tooltip>
+                              {
+                                isShowJobnoModal && jobnoList.length > 2
+                                ? <div className='popover-content'>
+                                    <div className='popover-title'>常用工号</div>
+                                    <div className='always-use-content'>
+                                      {
+                                        jobnoList.slice(2, jobnoList.length).map((item, index) => {
+                                          return (
+                                            <div key={index} className='item-content' onClick={() => {this.toAiQuote(item)}}>
+                                              <img src={item.icon} className='content-icon' alt=""/>
+                                              {item.name}
+                                            </div>
+                                          )
+                                        }) 
+                                      }
+                                    </div>
+                                  </div>
+                                : null
+                              }
+                              {
+                                isShowJobnoModal
+                                ? <div className='bottom-triangle'></div>
+                                : null
+                              } 
+                            </div>
+                            : null
+                      }
+                    </div>
+                  : <span className='empty-tip'>设置常用保险公司工号可进行快速报价</span>
+                }
+              </Col>
+              <Col style={{float: 'right'}}>
+                <div className='right-container'>
+                  <Tooltip placement="top" title='点击设置常用工号'>
+                    <Icon type="setting" style={{'paddingRight':'10px'}} className='set-icon' onClick={this.toHome} />
+                  </Tooltip>
+                  <div className='ver-line'></div>
+                  <div className='popover-modal' style={{padding: '0px 10px',width:'auto'}}>
+                    <div className='right-item active' onClick={(e) => {this.showInsuranceModal(e)}}>常用保司</div>
+                    {
+                      isShowInsuranceModal
+                      ? <div className='popover-content' style={{bottom: '40px'}}>
+                          <div className='popover-title'>常用保司</div>
+                          <div className='always-use-content'>
+                          {
+                            allInsuranceCp && allInsuranceCp.length
+                            ? allInsuranceCp.map((item, index) => {
+                                return (
+                                  <div key={index} className='item-content' onClick={() => {this.getJobNo(item)}}>
+                                    <img src={item.imageUrl} className='content-icon' alt=""/>
+                                    {item.name}
+                                  </div>
+                                )
+                            }) 
+                            : <span style={{color: '#ccc'}}>暂未配置常用保司</span>
+                          }
+                          </div>
+                        </div>
+                      : null
+                    }
+                    {
+                      isShowInsuranceModal
+                      ? <div className='bottom-triangle' style={{bottom: '40px'}}></div>
+                      : null
+                    } 
+                  </div>
+                  <div className='ver-line'></div>
+                  <div className='right-item active'  style={{padding: '0px 10px',width:'auto'}} onClick={this.btn1Click}>体验快速报价</div>
+                </div>
+              </Col>
+            </Row>
+          : null
+        }
         <div className='always-container'>
           <div className='left'>
             <img className='left-icon' src={sendImage} onClick={this.showSendImage}></img>
@@ -153,6 +322,16 @@ export default class Footer extends React.Component {
             </div>
           </div>
         </div>
+        {
+          isShowIframe
+          ? <Iframe iframeSrc={iframeSrc} showModalInfo={this.showModalInfo} closeIframe={this.closeIframe}/>
+          : null
+        }
+        {
+          isShowJobNo
+          ? <ChooseJobNo toAiQuote={this.toAiQuote} chooseList={chooseList} chooseTitle={chooseTitle} cancelChoose={this.cancelChoose}/>
+          : null
+        }
       </div>
     )
   }

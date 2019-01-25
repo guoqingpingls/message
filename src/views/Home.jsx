@@ -1,21 +1,21 @@
 import React from 'react';
 import axios from 'axios';
 import { Popover, Tooltip, Row, Col, Tabs, Modal, message, Menu, Dropdown, Icon, Avatar, Upload, Radio, Alert} from 'antd';
-// import HistoryList from './HistoryList';
-// import ChatImageList from './ChatImageList';
-// import BaseInfo from './BaseInfo';
-// import SubmitOffer from './SubmitOffer';
-// import SendImage from './SendImage';
-// import FormModal from './FormModal';
-// import QueryInfo from './QueryInfo';
-// import Iframe from './Iframe';
-// import EnquireRecord from './EnquireRecord';
-// import ChooseJobNo from './ChooseJobNo';
-// import qs from 'query-string';
-// import { Scrollbars } from 'react-custom-scrollbars';
-// import request from 'request';
-// import config from '../config'
-// import CheckModal from './CheckModal';
+import HistoryList from './HistoryList';
+import ChatImageList from './ChatImageList';
+import BaseInfo from './BaseInfo';
+import SubmitOffer from './SubmitOffer';
+import SendImage from './SendImage';
+import FormModal from './FormModal';
+import QueryInfo from './QueryInfo';
+import Iframe from './Iframe';
+import EnquireRecord from './EnquireRecord';
+import ChooseJobNo from './ChooseJobNo';
+import qs from 'query-string';
+import { Scrollbars } from 'react-custom-scrollbars';
+import request from 'request';
+import config from '../config'
+import CheckModal from './CheckModal';
 import {
     get_preprice_ins_inspreprices_priceDetails, //基本信息
     get_preprice_ins_message, //获取询价信息
@@ -106,7 +106,7 @@ export default class Home extends React.Component {
             recordList: [],
             isGetJobNo: true,   // 是否获取工号
             jobnoList: [],
-            isGetAllInsurance: true,
+            // isGetAllInsurance: true,
             isShowOperate: true,    // 是否显示报价操作栏
             isShowSettingGuide: false,  // 设置引导图片
             isShowJobNo: false,       // 是否显示工号选择页
@@ -114,25 +114,19 @@ export default class Home extends React.Component {
             chooseList: [],
             isShowIframe: false,
             iframeSrc: '',
+            queryParams: {},
+            isGetData: false,
+            pId: null
         };
         window.addEventListener('storage', (event) => {
             console.log(event);
             this.getNodeData();
         });
     };
-    componentWillMount() {
-        // this.getAllInsuranceCp();
-    };
-    componentDidMount() {
-        this.getNodeData();
+    componentDidMount () {
+        let {cid} = this.props.location.query;
         this.refs.scrollbars.scrollToBottom();
-        // 获取saas端customerid
-        // this.setState({
-        //     cid: 1,
-        //     isShowRobBtn: true
-        // })
-        // let tmp = sessionStorage.getItem('insbakUserInfo') || '';
-        let { cid } = this.props.location.query;
+        this.getNodeData();
         if (cid && cid.length > 0) {
             this.setState({
                 cid: cid,
@@ -143,7 +137,46 @@ export default class Home extends React.Component {
                 isShowRobBtn: false
             })
         }
+    }
+    componentWillMount() {
+        console.log('1111')
+        let obj = this.props;
+        this.dealUrlParams(obj)
     };
+    componentWillReceiveProps(nextProps) {
+        console.log('222')
+        let obj = nextProps
+        this.dealUrlParams(obj)
+    };
+    dealUrlParams = (obj) => {
+        let {pItemId, sId, priceId, cid, rId, pId} = obj.location.query;
+        this.state.pId = pId
+        let queryObj = sessionStorage.getItem('queryObj');
+        if (!!queryObj) {
+            queryObj = JSON.parse(queryObj)
+        } else {
+            queryObj = {}
+        }
+        // rId不存在 不作处理
+        // 都存在 rid相等 不做处理
+        if (!rId || (!!rId && !!queryObj.rId && rId === queryObj.rId)) {
+            return
+        }
+        // rId存在 session不存在 处理数据
+        // 都存在 rid不相等 处理数据
+        if ((!!rId && !queryObj.rId) || (!!rId && !!queryObj.rId && rId !== queryObj.rId)) {
+            this.state.queryParams = {
+                pItemId: pItemId,
+                sId: sId,
+                rId: rId,
+                priceId: priceId
+            }
+            this.state.isGetData = true
+            sessionStorage.setItem('queryObj', JSON.stringify(this.state.queryParams))
+            this.btnClick()
+            return
+        }
+    }
     // 控制人员消息显示
     setIm = () => {
         const { priceId } = this.props.location.query; //从URL获取询价ID
@@ -161,12 +194,14 @@ export default class Home extends React.Component {
         this.refs.scrollbars.scrollToBottom();
     };
     // 获取保险公司
-    getAllInsuranceCp = () => {
-        let {isGetAllInsurance, baseInfo} = this.state;
-        if (!isGetAllInsurance) {
+    getAllInsuranceCp = (type) => {
+        let { pId, baseInfo, allInsuranceCp} = this.state;
+        if (allInsuranceCp.length > 0) {
             return;
         }
-        get_insurance_cp_list(baseInfo.partnerId).then((res) => {
+        let self = this
+        let partnerid = baseInfo.partnerId || pId
+        get_insurance_cp_list(partnerid).then((res) => {
             let cpList = res.dtoList;
             let tmpCpList = [];
             cpList.map((item, index) => {
@@ -180,9 +215,15 @@ export default class Home extends React.Component {
                 })
                 tmpCpList = tmpCpList.concat(tmpSup);
             });
-            this.setState({
-                allInsuranceCp: tmpCpList
-            })
+            // self.setState({
+            //     allInsuranceCp: tmpCpList
+            // })
+            this.state.allInsuranceCp = tmpCpList
+            if (type) {
+                self.setState({
+                    isShowSubmit: true
+                })
+            }
         }).catch((err) => {
             console.log('cpList: ', err)
         })
@@ -251,7 +292,7 @@ export default class Home extends React.Component {
                         })
                         data[0].dtoList[0].supplierList = supplierList
                     }
-                    
+                    this.state.baseInfo = data[0].dtoList[0]
                     this.setState({ baseInfo: data[0].dtoList[0], messageList: messageList.reverse() }, () => { this.getImagesList(); this.getJobNo(); this.getAllInsuranceCp() })
                     // self.getAllInsuranceCp(data[0].dtoList[0].partnerId);
                 });
@@ -298,9 +339,15 @@ export default class Home extends React.Component {
     }
     // 提交报价
     btnClick = () => {
-        this.setState({
-            isShowSubmit: true
-        })
+        let {allInsuranceCp} = this.state
+        if (allInsuranceCp.length > 0) {
+            this.setState({
+                isShowSubmit: true
+            })
+        } else {
+            this.getAllInsuranceCp(1)
+        }
+
         // if (Number(this.state.baseInfo.status) === 1 || Number(this.state.baseInfo.status) === 2) {
         //     this.setState({
         //         isShowSubmit: true
@@ -346,12 +393,13 @@ export default class Home extends React.Component {
         
     }
     btn1Click = () => {
-        const { baseInfo } = this.state;
+        const { baseInfo, priceId } = this.state;
         // http://testinsbak.ananyun.net/LitePaperOffer/AddOffer?isGuide=true&s=list&itemid=询价单详情id&priceId=询价单id&SupplierId=指定的保险公司id&VehicleLicenceCode=编码后的车牌号&VehicleFrameNo=车架号&EngineNo=发动机号&OwnerName=姓名&OwnerIDCard=证件号&OwnerAddress=地址&OwnerMobile=手机&carImageFront=行驶证正面
         const currUrl = ('http://' + location.host);
         // let id = supplierId == undefined ? '' : supplierId;
         // const url = currUrl + "/LitePaperOffer/AddOffer?isGuide=true&s=list&itemid=" + baseInfo.priceitemid + '&priceId=' + this.state.priceId + "&SupplierId=" + id + "&VehicleLicenceCode=" + baseInfo.licenseNo + "&VehicleFrameNo=" + baseInfo.frameNo + "&EngineNo=" + baseInfo.engineno + "&OwnerName=" + baseInfo.ownerName + "&OwnerIDCard=" + baseInfo.ownerID + '&OwnerAddress=' + baseInfo.userAddress + '&OwnerMobile=' + baseInfo.userMobile + '&carImageFront=' + baseInfo.carImageFront;
-        const url = currUrl + "/LitePaperOffer/AddOffer?isGuide=true&s=list&itemid=" + baseInfo.priceitemid + '&priceId=' + this.state.priceId + '&carImageFront=' + baseInfo.carImageFront;
+        // const url = currUrl + "/LitePaperOffer/AddOffer?isGuide=true&s=list&itemid=" + baseInfo.priceitemid + '&priceId=' + this.state.priceId + '&carImageFront=' + baseInfo.carImageFront;
+        const url = `http://quote.ananyun.net/information?PriceItemId=${baseInfo.priceitemid}&PriceId=${priceId}`
         if (baseInfo.licenseNo) {
             openNavUrl(url, baseInfo.licenseNo + '-报价');
         } else {
@@ -1394,7 +1442,6 @@ export default class Home extends React.Component {
         }
     }
     showChoose = (item) => {
-
         let self = this;
         let {cid} = this.state;
         let jobnoList;
@@ -1495,6 +1542,8 @@ export default class Home extends React.Component {
             chooseTitle,
             isShowIframe,
             iframeSrc,
+            queryParams,
+            isGetData
         } = this.state;
         const uploadButton = (
             <div>
@@ -1857,7 +1906,7 @@ export default class Home extends React.Component {
                 <SendImage isSendImage={isSendImage} hideSendImage={this.hideSendImage} sendImage={this.sendImage}></SendImage>
                 <FormModal ref='formModal' priceId={priceId} isShowModal={isShowModal} submitForm={this.submitForm}
                     onCancel={this.onCancel} baseData={baseInfo} />
-                <SubmitOffer ref="submitOffer" clearQueryPriceInfo={this.clearQueryPriceInfo} allInsuranceCp={allInsuranceCp} queryPriceInfo={queryPriceInfo} priceId={priceId} closeSubmit={this.closeSubmit} isShowSubmit={isShowSubmit}
+                <SubmitOffer isGetData={isGetData} ref="submitOffer" queryParams={queryParams} clearQueryPriceInfo={this.clearQueryPriceInfo} allInsuranceCp={allInsuranceCp} queryPriceInfo={queryPriceInfo} priceId={priceId} closeSubmit={this.closeSubmit} isShowSubmit={isShowSubmit}
                     baseData={baseInfo} getPrice={this.getPrice} changesupplierIdToName={this.changesupplierIdToName} refreshData={refreshData} />
                 <div className='info-modal' style={{ display: previewVisible ? 'block' : 'none', zIndex: '11' }} onClick={this.hideCheckModal}>
                     <CheckModal ref='checkModal' getEnquireDetail={this.getEnquireDetail} hideCheckModal={this.hideCheckModal} priceId={priceId} imageSrc={previewImage} imagesInArr={imagesInArr} baseInfo={baseInfo}/>

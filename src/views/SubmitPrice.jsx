@@ -46,6 +46,8 @@ export default class SubmitPrice extends React.Component{
       commercialItems: [],    // 保险项目
       info: {},   // baseInfo queryInfo renewalInfo
       dataType: 0, // 0 baseInfo, 1 queryInfo, 2 renewalInfo
+      detailTotal: null,  // 明细总额
+      diff: null
     }
   }
   componentDidMount () {
@@ -59,6 +61,53 @@ export default class SubmitPrice extends React.Component{
       this.dealBaseData(baseInfo, false)
     }
   }
+  handlePaste = (e) => {
+    const _this = this;
+    const clipboardData = e.clipboardData;
+    if (!(clipboardData && clipboardData.items)) {//是否有粘贴内容
+      return;
+    }
+    for (let i = 0, len = clipboardData.items.length; i < len; i++) {
+      const item = clipboardData.items[i];
+      if (item.kind === "string" && item.type == "text/plain") {
+        item.getAsString(function (str) {
+          // console.log(str);
+        })
+      } else if (item.kind === "file") {
+        const blob = item.getAsFile();
+        const url = 'https://openapi.youbaolian.cn/api/preprice-ins/files/upload/wx/';
+        const extension = blob.type.match(/\/([a-z0-9]+)/i)[1].toLowerCase();
+        const fileName = 'paste_' + Date.now();
+        const formData = new FormData();
+        // formData.append("partnerId", baseInfo.partnerId);
+        formData.append("file", blob, fileName + '.' + extension);
+        formData.append("extension", extension);
+        formData.append("mimetype", blob.type);
+        formData.append("submission-type", 'paste');
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url);
+        xhr.onload = function () {
+          if (xhr.status == 200) {
+            console.log(xhr.responseText);
+            const response = JSON.parse(xhr.responseText);
+            _this.state.fileList.push({
+              uid: fileName,
+              name: fileName + '.' + extension,
+              status: 'done',
+              url: 'https://openapi.youbaolian.cn/' + response.resultMap.uri,
+              response: response
+            });
+            _this.handleChange({fileList: _this.state.fileList});
+            _this.setState({fileList: _this.state.fileList});
+          }
+        }
+        xhr.onerror = function (ev) {
+          console.log(ev);
+        };
+        xhr.send(formData);
+      }
+    }
+  };
   // 获取保险项id
   getCoverageIds = (list) => {
     let InsDetailIdList = list.map((item) => {
@@ -254,10 +303,13 @@ export default class SubmitPrice extends React.Component{
         }
       })
       if (totalBi/100 != bipremium) {
+        let diff = bipremium - totalBi/100
         params.coveragelist = JSON.stringify(totalList);
         this.setState({
           isShowToast: true,
-          submitParams: params
+          submitParams: params,
+          diff: diff.toFixed(2),
+          detailTotal: totalBi/100
         })
         return;
       }
@@ -532,7 +584,8 @@ export default class SubmitPrice extends React.Component{
       isShowToast,
       recordId,
       commercialItems,    // 保险项list
-
+      diff,
+      detailTotal
     } = this.state;
     let {fromRecord, allInsuranceCp} = this.props
     const uploadButton = (
@@ -541,40 +594,21 @@ export default class SubmitPrice extends React.Component{
       </div>
     );
     return (
-      <MpModal title='提交报价' cancel={this.cancel} isShowFooter={true} height='80%'>
-        <div className='submit-price-wrapper'>
-          <div className="submit-price-content">
-            <div className='submit-head'>
-              <span className='label'>是否价税分离</span>
-              <Switch checked={isSeparate} onChange={this.onChangeSwitch} />
-              <span className='label label-right' style={{marginLeft: '20px'}}>核保状态</span>
-              <Switch checked={checkStatus} onChange={this.changeCheckStatus}/>
-            </div>
-            <div className='select-insurance'>
-              <span className='title'>保险公司</span>
-              {
-                fromRecord
-                ? <Select
-                  showSearch
-                  style={{ width: 200 }}
-                  placeholder="请选择投保的保险公司"
-                  optionFilterProp="children"
-                  value={recordId || defaultValue || '请选择投保的保险公司'}
-                  onChange={this.dealChange}
-                  onFocus={this.handleFocus}
-                  onBlur={this.handleBlur}
-                  className='select-container'
-                  filterOption={(input, option) => option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}
-                >
-                  {
-                    allInsuranceCp && allInsuranceCp.map((item, index) => {
-                      return (
-                        <Option key={index} value={item.id}>{item.name}</Option>
-                      )
-                    })
-                  }
-                </Select>
-                : <Select
+      <div onPaste={this.handlePaste}>
+        <MpModal title='提交报价' cancel={this.cancel} isShowFooter={true} height='80%'>
+          <div className='submit-price-wrapper'>
+            <div className="submit-price-content">
+              <div className='submit-head'>
+                <span className='label'>是否价税分离</span>
+                <Switch checked={isSeparate} onChange={this.onChangeSwitch} />
+                <span className='label label-right' style={{marginLeft: '20px'}}>核保状态</span>
+                <Switch checked={checkStatus} onChange={this.changeCheckStatus}/>
+              </div>
+              <div className='select-insurance'>
+                <span className='title'>保险公司</span>
+                {
+                  fromRecord
+                  ? <Select
                     showSearch
                     style={{ width: 200 }}
                     placeholder="请选择投保的保险公司"
@@ -585,153 +619,175 @@ export default class SubmitPrice extends React.Component{
                     onBlur={this.handleBlur}
                     className='select-container'
                     filterOption={(input, option) => option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}
-                >
-                  {
-                    allInsuranceCp && allInsuranceCp.map((item, index) => {
-                      return (
-                        <Option key={index} value={item.id}>{item.searchName}</Option>
-                      )
-                    })
-                  }
-                </Select>
-              }
-            </div>
-            <ul className='coverage-list-container'>
-              {
-                commercialItems && commercialItems.length && commercialItems.map((item, index) => {
-                  return (
-                    <li className='submit-item-container' key={index}>
-                      <div className='item'>
-                        <span className='fee'>{item.feeTitle}</span>
-                        <input
-                          onChange={(e) => this.calculateFee(e, 'fee', item.type)}
-                          className='default'
-                          type="text"
-                          placeholder='0'
-                          maxLength="12"
-                          value={item.type === 1 && cipremium > 0 ? cipremium : (item.type === 2 && bipremium > 0) ?  bipremium : (item.type === 3 && carshiptax > 0) ? carshiptax : ''}
-                        />
-                      </div>
-                      <div className='item'>
-                        <span className='fee'>{item.rebateTitle}</span>
-                        <input
-                          onChange={(e) => this.calculateFee(e, 'rebate', item.type)}
-                          className='default'
-                          type="text"
-                          placeholder='0'
-                          maxLength="2"
-                          value={item.type === 1 && showcicommission > 0 ? showcicommission : item.type === 2 && showbicommission > 0 ?  showbicommission : item.type === 3 && showcarshiptax > 0 ? showcarshiptax : ''}
-                        /><span className='sign'>%</span>
-                      </div>
-                      <div className='item'>
-                        <span className='fee'>{item.commissionTitle}</span>
-                        <input
-                          className='default'
-                          type="text"
-                          placeholder='0'
-                          value={item.type === 1 ? ciCommission : item.type === 2 ? biCommission : item.type ===3 ? carshipCommission : ''}
-                          readOnly="true"
-                        />
-                      </div>
-                    </li>
-                  )
-                })
-              }
-            </ul>
-            {
-              isHasBi && totalList && totalList.length
-              ? (
-                  <div className='detail-wrapper'>
-                    <span className='title' onClick={this.toggleDetailShow}>{isShowDetail ? '收起' : '展开'}明细</span>
+                  >
                     {
-                      isShowDetail
-                      ? (
-                          <div className='insurance-container'>
-                            <ul>
-                              {
-                                totalList.map((item, index) => {
-                                  return(
-                                    <li className="insurance-item-container" key={index}>
-                                      {
-                                        Number(item.InsDetailId) > 30000
-                                        ? <span className=''>{item.ins}-不计免赔</span>
-                                        : <span className=''>{item.ins}{item.Amount ? '(' + Number(item.Amount).toFixed(2) + ')' : ''}</span>
-                                      }
-                                      <input
-                                        onChange={(e) => this.changeFee(e, item)}
-                                        className='item-fee'
-                                        type="text"
-                                        placeholder='0'
-                                        maxLength="12"
-                                        value={item.InsuredPremium || ''}
-                                        // onKeyUp={(e)=> {e.target.value.replace(/[^\d{1,}(\.\d{0,2})?$]/g,'')}}
-                                      />
-                                    </li>
-                                  )
-                                })
-                              }
-                            </ul> 
-                          </div>
+                      allInsuranceCp && allInsuranceCp.map((item, index) => {
+                        return (
+                          <Option key={index} value={item.id}>{item.name}</Option>
                         )
-                      : null
+                      })
                     }
-                  </div>
-                )
-              : null
-            }
-            <div className='upload-image-container'>
-              <span className='upload-image-title' style={{marginBottom: '10px'}}>报价截图<span style={{fontSize: '12px'}}>（支持CTRL+V粘贴您QQ截取的报价图片）</span></span>
-              <div>
-                <Upload
-                  action="https://openapi.youbaolian.cn/api/preprice-ins/files/upload/wx/"
-                  listType="picture-card"
-                  fileList={fileList}
-                  onPreview={this.handlePreview}
-                  onChange={this.handleChange}
-                >
-                  {fileList.length >= 3 ? null : uploadButton}
-                </Upload>
-                <Modal visible={previewVisible} footer={null} onCancel={this.handleCancel}>
-                  <img alt="example" style={{width: '100%'}} src={previewImage}/>
-                </Modal>
+                  </Select>
+                  : <Select
+                      showSearch
+                      style={{ width: 200 }}
+                      placeholder="请选择投保的保险公司"
+                      optionFilterProp="children"
+                      value={recordId || defaultValue || '请选择投保的保险公司'}
+                      onChange={this.dealChange}
+                      onFocus={this.handleFocus}
+                      onBlur={this.handleBlur}
+                      className='select-container'
+                      filterOption={(input, option) => option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}
+                  >
+                    {
+                      allInsuranceCp && allInsuranceCp.map((item, index) => {
+                        return (
+                          <Option key={index} value={item.id}>{item.searchName}</Option>
+                        )
+                      })
+                    }
+                  </Select>
+                }
+              </div>
+              <ul className='coverage-list-container'>
+                {
+                  commercialItems && commercialItems.length && commercialItems.map((item, index) => {
+                    return (
+                      <li className='submit-item-container' key={index}>
+                        <div className='item'>
+                          <span className='fee'>{item.feeTitle}</span>
+                          <input
+                            onChange={(e) => this.calculateFee(e, 'fee', item.type)}
+                            className='default'
+                            type="text"
+                            placeholder='0'
+                            maxLength="12"
+                            value={item.type === 1 && cipremium > 0 ? cipremium : (item.type === 2 && bipremium > 0) ?  bipremium : (item.type === 3 && carshiptax > 0) ? carshiptax : ''}
+                          />
+                        </div>
+                        <div className='item'>
+                          <span className='fee'>{item.rebateTitle}</span>
+                          <input
+                            onChange={(e) => this.calculateFee(e, 'rebate', item.type)}
+                            className='default'
+                            type="text"
+                            placeholder='0'
+                            maxLength="2"
+                            value={item.type === 1 && showcicommission > 0 ? showcicommission : item.type === 2 && showbicommission > 0 ?  showbicommission : item.type === 3 && showcarshiptax > 0 ? showcarshiptax : ''}
+                          /><span className='sign'>%</span>
+                        </div>
+                        <div className='item'>
+                          <span className='fee'>{item.commissionTitle}</span>
+                          <input
+                            className='default'
+                            type="text"
+                            placeholder='0'
+                            value={item.type === 1 ? ciCommission : item.type === 2 ? biCommission : item.type ===3 ? carshipCommission : ''}
+                            readOnly="true"
+                          />
+                        </div>
+                      </li>
+                    )
+                  })
+                }
+              </ul>
+              {
+                isHasBi && totalList && totalList.length
+                ? (
+                    <div className='detail-wrapper'>
+                      <span className='title' onClick={this.toggleDetailShow}>{isShowDetail ? '收起' : '展开'}明细</span>
+                      {
+                        isShowDetail
+                        ? (
+                            <div className='insurance-container'>
+                              <ul>
+                                {
+                                  totalList.map((item, index) => {
+                                    return(
+                                      <li className="insurance-item-container" key={index}>
+                                        {
+                                          Number(item.InsDetailId) > 30000
+                                          ? <span className=''>{item.ins}-不计免赔</span>
+                                          : <span className=''>{item.ins}{item.Amount ? '(' + Number(item.Amount).toFixed(2) + ')' : ''}</span>
+                                        }
+                                        <input
+                                          onChange={(e) => this.changeFee(e, item)}
+                                          className='item-fee'
+                                          type="text"
+                                          placeholder='0'
+                                          maxLength="12"
+                                          value={item.InsuredPremium || ''}
+                                          // onKeyUp={(e)=> {e.target.value.replace(/[^\d{1,}(\.\d{0,2})?$]/g,'')}}
+                                        />
+                                      </li>
+                                    )
+                                  })
+                                }
+                              </ul> 
+                            </div>
+                          )
+                        : null
+                      }
+                    </div>
+                  )
+                : null
+              }
+              <div className='upload-image-container'>
+                <span className='upload-image-title' style={{marginBottom: '10px'}}>报价截图<span style={{fontSize: '12px'}}>（支持CTRL+V粘贴您QQ截取的报价图片）</span></span>
+                <div>
+                  <Upload
+                    action="https://openapi.youbaolian.cn/api/preprice-ins/files/upload/wx/"
+                    listType="picture-card"
+                    fileList={fileList}
+                    onPreview={this.handlePreview}
+                    onChange={this.handleChange}
+                  >
+                    {fileList.length >= 3 ? null : uploadButton}
+                  </Upload>
+                  <Modal visible={previewVisible} footer={null} onCancel={this.handleCancel}>
+                    <img alt="example" style={{width: '100%'}} src={previewImage}/>
+                  </Modal>
+                </div>
               </div>
             </div>
+            <div className='submit-footer-container'>
+              <div className='total-price-container'>
+                <div className='price-item'>
+                  <span className='price-title'>总保费: </span>
+                  <span className='sub-fee'>{totalpremium || 0}元</span>
+                </div>
+                <div className='price-item'>
+                  <span className='price-title'>总返佣: </span>
+                  <span className='sub-fee'>{commission || 0}元</span>
+                </div>
+                <div className='price-item'>
+                  <span className='price-title'>净费: </span>
+                  <span className='sub-fee'>{pureFee || 0}元</span>
+                </div>
+                <div className='price-item'>
+                  <span className='price-title'>综合点位: </span>
+                  <span className='sub-fee'>{comprehensivePoint || 0}元</span>
+                </div>
+              </div>
+              <div className="operate-container">
+                <Button type="primary" className='operate-btn' onClick={this.submit}>提交</Button>
+                <Button className='operate-btn' onClick={this.cancel}>取消</Button>
+              </div>
+            </div>
+            <Modal title="提示"
+              visible={isShowToast}
+              onOk={this.handleOk}
+              onCancel={this.dealCancel}
+              okText="确定"
+              cancelText='取消'
+            >
+              <p>商业保费金额({bipremium})和明细金额({detailTotal})不一致,相差 {diff} 是否继续提交？？</p>
+            </Modal>
           </div>
-          <div className='submit-footer-container'>
-            <div className='total-price-container'>
-              <div className='price-item'>
-                <span className='price-title'>总保费: </span>
-                <span className='sub-fee'>{totalpremium || 0}元</span>
-              </div>
-              <div className='price-item'>
-                <span className='price-title'>总返佣: </span>
-                <span className='sub-fee'>{commission || 0}元</span>
-              </div>
-              <div className='price-item'>
-                <span className='price-title'>净费: </span>
-                <span className='sub-fee'>{pureFee || 0}元</span>
-              </div>
-              <div className='price-item'>
-                <span className='price-title'>综合点位: </span>
-                <span className='sub-fee'>{comprehensivePoint || 0}元</span>
-              </div>
-            </div>
-            <div className="operate-container">
-              <Button type="primary" className='operate-btn' onClick={this.submit}>提交</Button>
-              <Button className='operate-btn' onClick={this.cancel}>取消</Button>
-            </div>
-          </div>
-          <Modal title="提示"
-            visible={isShowToast}
-            onOk={this.handleOk}
-            onCancel={this.dealCancel}
-            okText="确定"
-            cancelText='取消'
-          >
-            <p>保费总金额和明细金额计算不一致, 是否继续提交？？</p>
-          </Modal>
-        </div>
-      </MpModal>
+        </MpModal>
+      </div>
+     
     )
   }
 }

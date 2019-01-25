@@ -186,7 +186,11 @@ function factory (value, source) {
 function translateIdToName (value) {
   return factory(value, dataSource.coverageList)
 }
-module.exports = {
+// 保司id -> 保司name
+function insuranceIdToName (value) {
+    return factory(value, dataSource.insuranceCpList)
+}
+export {
     insuranceInString,
     changesupplierIdToName,
     getInsDetailId,
@@ -197,5 +201,6 @@ module.exports = {
     date,
     dateF,
     translateIdToName,
-    isHasCommercial
+    isHasCommercial,
+    insuranceIdToName
 }

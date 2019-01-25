@@ -77,6 +77,53 @@ export default class SendImageModal extends React.Component{
   cancel = () => {
     this.props.hideSendImage()
   }
+  handlePaste = (e) => {
+    const _this = this;
+    const clipboardData = e.clipboardData;
+    if (!(clipboardData && clipboardData.items)) {//是否有粘贴内容
+      return;
+    }
+    for (let i = 0, len = clipboardData.items.length; i < len; i++) {
+      const item = clipboardData.items[i];
+      if (item.kind === "string" && item.type == "text/plain") {
+        item.getAsString(function (str) {
+          // console.log(str);
+        })
+      } else if (item.kind === "file") {
+        const blob = item.getAsFile();
+        const url = 'https://openapi.youbaolian.cn/api/preprice-ins/files/upload/wx/';
+        const extension = blob.type.match(/\/([a-z0-9]+)/i)[1].toLowerCase();
+        const fileName = 'paste_' + Date.now();
+        const formData = new FormData();
+        // formData.append("partnerId", baseInfo.partnerId);
+        formData.append("file", blob, fileName + '.' + extension);
+        formData.append("extension", extension);
+        formData.append("mimetype", blob.type);
+        formData.append("submission-type", 'paste');
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url);
+        xhr.onload = function () {
+          if (xhr.status == 200) {
+            console.log(xhr.responseText);
+            const response = JSON.parse(xhr.responseText);
+            _this.state.fileList.push({
+              uid: fileName,
+              name: fileName + '.' + extension,
+              status: 'done',
+              url: 'https://openapi.youbaolian.cn/' + response.resultMap.uri,
+              response: response
+            });
+            _this.handleChange({fileList: _this.state.fileList});
+            _this.setState({fileList: _this.state.fileList});
+          }
+        }
+        xhr.onerror = function (ev) {
+          console.log(ev);
+        };
+        xhr.send(formData);
+      }
+    }
+  };
   render () {
     const defaultProps = {
       action: "https://openapi.youbaolian.cn/api/preprice-ins/files/upload/wx/",
@@ -90,21 +137,24 @@ export default class SendImageModal extends React.Component{
     );
     let {fileList, previewVisible, previewImage} = this.state;
     return (
-      <MpModal title='发送图片' sure={this.sendImage} cancel={this.cancel}>
-        <div className='send-image-wrapper'>
-          <Upload
-            {...defaultProps}
-            fileList={fileList}
-            onPreview={this.handlePreview}
-            onChange={this.handleChange }
-          >
-            {uploadButton}
-          </Upload>
-          <Modal visible={previewVisible} footer={null} onCancel={this.handleCancel}>
-            <img alt="example" style={{width: '100%'}} src={previewImage}/>
-          </Modal>
-        </div>
-      </MpModal>
+      <div onPaste={this.handlePaste}>
+        <MpModal title='发送图片' sure={this.sendImage} cancel={this.cancel}>
+          <div className='send-image-wrapper'>
+            <Upload
+              {...defaultProps}
+              fileList={fileList}
+              onPreview={this.handlePreview}
+              onChange={this.handleChange }
+            >
+              {uploadButton}
+            </Upload>
+            <Modal visible={previewVisible} footer={null} onCancel={this.handleCancel}>
+              <img alt="example" style={{width: '100%'}} src={previewImage}/>
+            </Modal>
+          </div>
+        </MpModal>
+      </div>
+      
     )
   }
 }
