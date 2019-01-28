@@ -12,10 +12,11 @@ export default class MpMpdal extends React.Component {
     this.props.sure();
   }
   render () {
-    let {title, isShowFooter, height} = this.props;
+    let {title, isShowFooter, height, width} = this.props;
     return(
       <div className='modal-wrapper'>
-        <div className='modal-container' style={height ? {height: height} : null}>
+        {/* <div className='modal-container' style={height ? {height: height} : null, width ? {width: width} : null}> */}
+        <div className='modal-container' style={{height: height || 'inherit', width: width || '50%'}}>
           <div className='title-wrapper'>
             <span>{title || ''}</span>
             <Icon type="close" onClick={this.cancel} />

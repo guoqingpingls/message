@@ -59,7 +59,7 @@ export default class Index extends React.Component{
       priceId: null,
       isShowModal: false,
       isShowSubmit: false,
-      previewVisible: false,
+      isShowCheckModal: false,
       previewImage: '',
       historicalPriceList: [],
       queryPriceInfo: {},
@@ -234,6 +234,7 @@ export default class Index extends React.Component{
       }
     })
   }
+  // 获取消息操作按钮
   getBtnArray = (item, status) => {
     let btnArray = []
     // 抢单
@@ -426,17 +427,17 @@ export default class Index extends React.Component{
     let userId = baseInfo.userid;
     let configs = messageList.reverse().filter(function (item) { return item.remarks == '已确认此报价' });
     let params = {
-        PayType: baseInfo.paymentMethod, // 1 业务员 2 代理
-        SalemanId: customerId, //业务员ID
-        Source: 3, //3：小程序报价，2，直连
-        AutomaticType: 18, //小程序自动落单
-        UnNav: 1,  //页面不需要左侧菜单
-        InsuranceType: m, //10:商业，11：交强
-        SalesmanSettleRate: 0,  //业务员保单手续费比例
-        SalesmanVVTaxSettleRate: 0, //业务员车船税手续费比例
-        insFeeType: 2, //2全费，1净费
-        UserId: userId,     //通知给的用户id
-        AutoSettlement: 0  //是否自动结佣，展示拿不到
+      PayType: baseInfo.paymentMethod, // 1 业务员 2 代理
+      SalemanId: customerId, //业务员ID
+      Source: 3, //3：小程序报价，2，直连
+      AutomaticType: 18, //小程序自动落单
+      UnNav: 1,  //页面不需要左侧菜单
+      InsuranceType: m, //10:商业，11：交强
+      SalesmanSettleRate: 0,  //业务员保单手续费比例
+      SalesmanVVTaxSettleRate: 0, //业务员车船税手续费比例
+      insFeeType: 2, //2全费，1净费
+      UserId: userId,     //通知给的用户id
+      AutoSettlement: 0  //是否自动结佣，展示拿不到
     };
     confirm({
       title: '如果系统开启了人工询价保单自动结算模式，录单后将自动执行下游结算操作，请确保录入的费用信息和给业务员沟通的费用信息一致，以免后续产生不必要的麻烦，您确认要继续操作么？',
@@ -727,8 +728,27 @@ export default class Index extends React.Component{
       isShowJobNo: false
     })
   }
+  // 点击图片
+  handlePreview = (images, imageUrl) => {
+    this.setState({
+      isShowCheckModal: true,
+      previewImage: imageUrl,
+      imagesInArr: images
+    })
+  };
+  // 关闭图片识别弹窗
+  hideCheckModal = (val) => {
+    this.refs.checkModal.resetChooseIndex()
+    if (val && val === 1) {
+      this.getPriceDetail();
+    }
+    this.setState({
+      isShowCheckModal: false,
+      previewImage: ''
+    })
+  }
   render() {
-    const {
+    let {
       refreshData,
       allImageList,
       imagesInArr,
@@ -741,7 +761,7 @@ export default class Index extends React.Component{
       isShowSubmit,
       baseInfo,
       previewImage,
-      previewVisible,
+      isShowCheckModal,
       isSendImage,
       payType,
       isShowPayType,
@@ -805,10 +825,10 @@ export default class Index extends React.Component{
             </Tabs>
           </div>
         </div>
-        {/* {
-          previewVisible
+        {
+          isShowCheckModal
           ? <CheckModal
-              getEnquireDetail={this.getEnquireDetail}
+              ref="checkModal"
               hideCheckModal={this.hideCheckModal}
               priceId={priceId}
               imageSrc={previewImage}
@@ -816,10 +836,10 @@ export default class Index extends React.Component{
               baseInfo={baseInfo}
             />
           : null
-        } */}
-        <div className='info-modal' style={{ display: previewVisible ? 'block' : 'none' }} onClick={this.hideCheckModal}>
+        }
+        {/* <div className='info-modal' style={{ display: previewVisible ? 'block' : 'none' }} onClick={this.hideCheckModal}>
           <CheckModal getEnquireDetail={this.getEnquireDetail} hideCheckModal={this.hideCheckModal} priceId={priceId} imageSrc={previewImage} imagesInArr={imagesInArr} baseInfo={baseInfo}/>
-        </div>
+        </div> */}
         <div className='bg-container' style={{ display: isShowBg ? 'block' : 'none', backgroundColor: 'rgba(7, 17, 27, 0.4)' }}>
           <div className='bg-content'>
             <Icon type="loading" className='bg-icon' />
