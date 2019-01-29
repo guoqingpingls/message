@@ -32,10 +32,7 @@ export default class CheckModal extends React.Component {
     super(props);
     this.state = {
       isShowRight: false,     // 是否显示右边的识别部分
-      baseInfo: '',
-      priceId: null,
       choosedIndex: null,
-      showSuccesstip: false,
       isShowLoading: false,
       imageInfo: {},
       DLFront: {
@@ -75,9 +72,7 @@ export default class CheckModal extends React.Component {
       },
       defaultWidth: 412,
       defaultHeight: 316,
-      // rotateDeg: 0,
-      path: 'https://openapi.youbaolian.cn//pic/15/5/af95082c27564e079158b1d6d5777729.JPG',
-      // path: 'https://openapi.youbaolian.cn//pic/11/9/6c9277c3107b4323a5ba8f72b8d067de.png',
+      path: '',
       images: [],
       // new
       modalWidth: '50%',
@@ -112,7 +107,6 @@ export default class CheckModal extends React.Component {
     this.setState({
       choosedIndex: index
     })
-    // this.searchByItem(this.props.priceId);
   }
   resetChooseIndex = () => {
     this.setState({
@@ -120,28 +114,6 @@ export default class CheckModal extends React.Component {
       isShowRight: false,
     })
   }
-  // componentWillReceiveProps(nextProps) {
-  //   // if (this.props.imageSrc !== nextProps.imageSrc) {
-  //   //   let {defaultWidth, defaultHeight} = this.state
-  //   //   let image = new Image();
-  //   //   image.src = nextProps.imageSrc;
-  //   //   this.state.imageInfo = {
-  //   //     path: nextProps.imageSrc,
-  //   //     width: defaultWidth,
-  //   //     height: defaultHeight,
-  //   //   }
-  //   //   this.setState({
-  //   //     path: nextProps.imageSrc,
-  //   //     images: nextProps.imagesInArr,
-  //   //     rotateDeg: 0
-  //   //   })
-  //   // }
-  //   // if (this.props.baseInfo !== nextProps.baseInfo) {
-  //   //   this.setState({
-  //   //     baseInfo: nextProps.baseInfo
-  //   //   })
-  //   // }
-  // }
   closeModal = () => {
     this.props.hideCheckModal();
   }
@@ -174,19 +146,6 @@ export default class CheckModal extends React.Component {
       });
     };
   }
-  // 查询
-  searchByItem = (priceId) => {
-    search_car_info(priceId).then((res) => {
-      if (res.returnCode === 2 ) {
-        this.setState({
-          DLFront: res.dtoList[0].Dlfront,
-          DLBack: res.dtoList[0].Dlback,
-          IDFront: res.dtoList[0].Idfront,
-          IDBack: res.dtoList[0].Idback
-        })
-      }
-    })
-  }
   // 重新识别
   recogniteImage = () => {
     let { baseInfo } = this.props;
@@ -205,9 +164,6 @@ export default class CheckModal extends React.Component {
     })
     image_recognition(params).then((res) => {
       if (res.returnCode === 2) {
-        this.setState({
-          showSuccesstip: true
-        })
         if (res.dtoList.length) {
           self.getDataInType(res.dtoList[0]);
           this.setState({
@@ -321,7 +277,6 @@ export default class CheckModal extends React.Component {
             message: res.message,
             duration: 3
           });
-          // self.props.getEnquireDetail();
         } else {
           notification.open({
             message: res.message,
@@ -474,6 +429,26 @@ export default class CheckModal extends React.Component {
       this.setState({
         imageInfo: Object.assign({}, imageInfo, {
           rotateDeg: tmpRotate,
+          width: defaultHeight,
+          height: defaultWidth
+        })
+      })
+    }
+  }
+  dealRotate (deg) {
+    let {imageInfo, defaultWidth, defaultHeight} = this.state;
+    if (deg%180 === 0) {
+      this.setState({
+        imageInfo: Object.assign({}, imageInfo, {
+          rotateDeg: deg,
+          width: defaultWidth,
+          height: defaultHeight
+        })
+      })
+    } else {
+      this.setState({
+        imageInfo: Object.assign({}, imageInfo, {
+          rotateDeg: deg,
           width: defaultHeight,
           height: defaultWidth
         })

@@ -85,7 +85,6 @@ export default class Index extends React.Component{
       isShowJobNo: false,
       jobnoList: [],
       chooseList: [],
-      // rId:null,
       isGetData: false,
     };
   }
@@ -145,7 +144,6 @@ export default class Index extends React.Component{
     get_price_detail(priceId).then((res) => {
       if (res.returnCode === 0) {
         if (!baseInfo.status) {
-
           self.state.baseInfo = res.dtoList[0]
           self.getMessageList()
         }
@@ -178,6 +176,7 @@ export default class Index extends React.Component{
     let self = this;
     get_message_list(priceId).then((res) => {
       if (res.returnCode === 0 && res.dtoList && res.dtoList.length) {
+        this.getChatImages(res.dtoList)
         let messageList = res.dtoList.map((item) => {
           if (item.config && item.config.length > 0) {
             let temp = JSON.parse(item.config);
@@ -212,7 +211,6 @@ export default class Index extends React.Component{
           item.btnArray = self.getBtnArray(item, baseInfo.status)
           return item
         })
-        console.log(messageList)
         self.setState({
           messageList: messageList.reverse()
         })
@@ -374,7 +372,7 @@ export default class Index extends React.Component{
     if (type && type === 1) {
       // refresh data
       // 发送消息会刷新消息列表
-      // this.getMessageList()
+      this.getMessageList()
       this.getPriceDetail()
     }
     this.setState({
@@ -388,7 +386,6 @@ export default class Index extends React.Component{
     let { baseInfo, priceId, cid } = this.state;
     // 抢单
     if (baseInfo.status === 301) {
-      // this.robPrice();
       this.setState({
         isShowRobTip: true
       })
@@ -711,13 +708,13 @@ export default class Index extends React.Component{
       this.queryInsuredPrice()
     }
     // 获取聊天图片
-    if (+activeKey === 3) {
-      this.getChatImages()
-    }
+    // if (+activeKey === 3) {
+    //   this.getChatImages()
+    // }
   }
   // 获取聊天图片
-  getChatImages = () => {
-    let {messageList} = this.state
+  getChatImages = (messageList) => {
+    // let {messageList} = this.state
     let list = []
     messageList.map((item) => {
       if (item.imageuris && item.imageuris.length > 0) {
@@ -729,6 +726,7 @@ export default class Index extends React.Component{
         })
       }
     })
+    console.log(list)
     this.setState({
       chatImageList: list
     })
@@ -806,7 +804,6 @@ export default class Index extends React.Component{
       chooseTitle,
       isShowJobNo,
       chooseList,
-      // rId
       isGetData
     } = this.state;
     return (
@@ -841,7 +838,7 @@ export default class Index extends React.Component{
           <div className='right-container'>
             <Tabs defaultActiveKey="1" onChange={this.changeTab}>
               <TabPane tab={<span className='tab-container'><i className='iconfont icon-kehu tab-icon' /><span>基本信息</span></span>} key="1">
-                <BaseInfo showRobModal={this.showRobModal} allInsuranceCp={allInsuranceCp} btnClick={this.btn1Click} baseData={baseInfo} />
+                <BaseInfo showRobModal={this.showRobModal} allInsuranceCp={allInsuranceCp} baseData={baseInfo} />
               </TabPane>
               <TabPane tab={<span className='tab-container'><i className='iconfont icon-kehuziliao-copy tab-icon' /><span>询价人资料</span></span>} key="2">
                 <QueryInfo baseData={baseInfo} />
@@ -867,9 +864,6 @@ export default class Index extends React.Component{
             />
           : null
         }
-        {/* <div className='info-modal' style={{ display: previewVisible ? 'block' : 'none' }} onClick={this.hideCheckModal}>
-          <CheckModal getEnquireDetail={this.getEnquireDetail} hideCheckModal={this.hideCheckModal} priceId={priceId} imageSrc={previewImage} imagesInArr={imagesInArr} baseInfo={baseInfo}/>
-        </div> */}
         <div className='bg-container' style={{ display: isShowBg ? 'block' : 'none', backgroundColor: 'rgba(7, 17, 27, 0.4)' }}>
           <div className='bg-content'>
             <Icon type="loading" className='bg-icon' />
@@ -896,7 +890,6 @@ export default class Index extends React.Component{
         {
           isShowSubmit
           ? <SubmitPrice
-              // rId={rId}
               isGetData={isGetData}
               priceId={priceId}
               baseInfo={baseInfo}

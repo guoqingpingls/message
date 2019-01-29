@@ -14,7 +14,7 @@ export default class BaseInfo extends React.Component{
     }
   }
   componentWillReceiveProps (nextProps) {
-    if (nextProps.baseData && nextProps.baseData.coverageList || nextProps.allInsuranceCp !== this.props.allInsuranceCp) {
+    if (nextProps.baseData && nextProps.baseData.coverageList) {
       if (nextProps.baseData.coverageList && nextProps.baseData.coverageList.length > 0) {
         // 返回参数为json or array
         let tmpCoverageList
@@ -32,9 +32,6 @@ export default class BaseInfo extends React.Component{
       })
     }
   };
-  getPrice = (supplierId) => {
-    this.props.btnClick(supplierId);
-  }
   formateCoverageItem (item) {
     let str = '投保';
     if (item.Amount) {
@@ -50,9 +47,6 @@ export default class BaseInfo extends React.Component{
       str += '-进口玻璃'
     }
     return str
-  }
-  showRobModal = () => {
-    this.props.showRobModal()
   }
   CopyValue = (e) => {
     let ele = e.target

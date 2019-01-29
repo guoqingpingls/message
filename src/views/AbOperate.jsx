@@ -37,9 +37,6 @@ export default class AbOperate extends React.Component {
         console.log('transfer: ', err)
     })
   }
-  // 发送支付方式
-  sure = () => {
-  }
   // 取消
   cancel = () => {
     this.props.closeAbModal()

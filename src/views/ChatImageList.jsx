@@ -15,20 +15,20 @@ export default class ChatImageList extends React.Component{
       baseUrl: 'https://openapi.youbaolian.cn/api/preprice-ins/files/upload/download?priceId='
     }
   }
-  componentWillReceiveProps (nextProps) {
-    if (this.props.chatImageList !== nextProps.chatImageList) {
-      this.setState({
-        chatImageList: nextProps.chatImageList
-      })
-    }
-  }
-  componentDidMount () {
-    if (this.props.chatImageList && this.props.chatImageList.length > 0 ) {
-      this.setState({
-        chatImageList: this.props.chatImageList
-      })
-    }
-  }
+  // componentWillReceiveProps (nextProps) {
+  //   if (this.props.chatImageList !== nextProps.chatImageList) {
+  //     this.setState({
+  //       chatImageList: nextProps.chatImageList
+  //     })
+  //   }
+  // }
+  // componentDidMount () {
+  //   if (this.props.chatImageList && this.props.chatImageList.length > 0 ) {
+  //     this.setState({
+  //       chatImageList: this.props.chatImageList
+  //     })
+  //   }
+  // }
   upDownSort = () => {
     const { positiveSort, chatImageList } = this.state;
     this.setState({
@@ -58,8 +58,8 @@ export default class ChatImageList extends React.Component{
     this.props.handlePreview(item.imageuris, ite)
   }
   render () {
-    const {baseUrl, positiveSort, chatImageList} = this.state;
-    const {priceId} = this.props;
+    const {baseUrl, positiveSort} = this.state;
+    const {priceId, chatImageList} = this.props;
     return (
       <div className='image-wrapper'>
         {
