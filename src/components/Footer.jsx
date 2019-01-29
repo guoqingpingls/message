@@ -99,9 +99,11 @@ export default class Footer extends React.Component {
   // 去ai报价
   toAiQuote = (item) => {
     let { baseInfo, priceId } = this.props;
-    let currUrl = ('http://' + location.host);
+    let currUrl = 'http://' + location.host;
     let id = item.id
-    let url = `http://insbak.ananyun.net/LitePaperOffer/AiQuote?itemid=${baseInfo.priceitemid}&priceId=${priceId}&supId=${item.id}&jobnoid=${item.jobnoid || ''}`;
+    // let url = `http://insbak.ananyun.net/LitePaperOffer/AiQuote?itemid=${baseInfo.priceitemid}&priceId=${priceId}&supId=${item.id}&jobnoid=${item.jobnoid || ''}`;
+    let url = `${currUrl}/LitePaperOffer/AiQuote?itemid=${baseInfo.priceitemid}&priceId=${priceId}&supId=${item.id}&jobnoid=${item.jobnoid || ''}`;
+    console.log(url)
     this.setState({
         isShowIframe: true,
         iframeSrc: url

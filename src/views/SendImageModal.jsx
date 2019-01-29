@@ -3,6 +3,7 @@ import MpModal from '../components/MpModal';
 import {Upload, Modal, message, Icon } from 'antd';
 import {reply_remark_api} from '../services/index';
 import '../stylesheets/SendImageModal.less';
+import {sendIM} from '../util/util.js'
 const pageName = '发送图片'
 export default class SendImageModal extends React.Component{
   constructor (props) {
@@ -63,12 +64,7 @@ export default class SendImageModal extends React.Component{
       cid: cid
     };
     reply_remark_api(params).then((res) => {
-      let msgContent = {};
-      msgContent.type = "IM";
-      msgContent.target = 'C_' + baseInfo.userid;
-      msgContent.msg = '';
-      msgContent.time = Date.now();
-      localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
+      sendIM(baseInfo.userid, '')
       self.props.hideSendImage(1);
     }).catch((err) => {
       console.log('err: ', err);

@@ -2,13 +2,14 @@ import React from 'react';
 import MpModal from '../components/MpModal.jsx';
 import {Switch, Select, Icon, Upload, Modal, Button, message } from 'antd';
 import '../stylesheets/SubmitPrice.less';
-const { hasCommercialInsurance, isEmptyObject, filterInsurance, isHasCommercial, translateIdToName } = require('../util/util.js');
+const { isEmptyObject, isHasCommercial, translateIdToName } = require('../util/util.js');
 const Option = Select.Option;
 import {
   get_price_info,
   submit_to_get_price
 } from '../services/index';
 import { type } from 'os';
+import { sendIM } from '../util/util';
 const pageName = '提交报价'
 export default class SubmitPrice extends React.Component{
   // 数据三个来源
@@ -51,7 +52,10 @@ export default class SubmitPrice extends React.Component{
     }
   }
   componentDidMount () {
-    let { baseInfo, queryPriceInfo } = this.props;
+    let { baseInfo, queryPriceInfo, isGetData } = this.props;
+    if (isGetData) {
+       
+    }
     if (isEmptyObject(queryPriceInfo)) {
       this.state.dataType = 1
       this.state.recordId = queryPriceInfo.SupplierId;
@@ -327,12 +331,7 @@ export default class SubmitPrice extends React.Component{
       // self.refreshData()
       self.dealCancel()
       // send IM
-      let msgContent = {};
-      msgContent.type = "IM";
-      msgContent.target = 'C_' + baseInfo.userid;
-      msgContent.msg = 'replyContent';
-      msgContent.time = Date.now();
-      localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
+      sendIM(baseInfo.userid, 'replyContent')
     })
   }
   // 商业险 !== 商业明细和 取消

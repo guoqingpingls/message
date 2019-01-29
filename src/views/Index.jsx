@@ -17,7 +17,7 @@ import CheckModal from './CheckModal';
 import SubmitPrice from './SubmitPrice';
 import SendImageModal from './SendImageModal';
 import GeneratePolicy from './GeneratePolicy';
-import { openNavUrl, date, translateIdToName, insuranceIdToName, isEmptyObject } from '../util/util.js';
+import { openNavUrl, date, translateIdToName, insuranceIdToName, isEmptyObject, sendIM } from '../util/util.js';
 import {
     get_price_detail, //获取询价基本信息
     get_message_list, //获取消息列表
@@ -84,16 +84,19 @@ export default class Index extends React.Component{
       chooseTitle: [],  // 常用保司 name
       isShowJobNo: false,
       jobnoList: [],
-      chooseList: []
+      chooseList: [],
+      // rId:null,
+      isGetData: false,
     };
   }
   componentWillMount () {
-    // 从地址栏获取priceId cid
-    let {priceId, cid, pId} = this.props.location.query;
-    this.state.priceId = priceId;
-    this.state.cid = cid;
-    this.state.pId = pId;
+    let obj = this.props;
+    this.dealUrlParams(obj)
   }
+  componentWillReceiveProps(nextProps) {
+    let obj = nextProps
+    this.dealUrlParams(obj)
+  };
   componentDidMount () {
     this.getPriceDetail()
     this.getMessageList()
@@ -104,6 +107,38 @@ export default class Index extends React.Component{
   componentDidUpdate() {
     this.refs.scrollbars.scrollToBottom();
   };
+  dealUrlParams = (obj) => {
+    let {pItemId, sId, priceId, cid, rId, pId} = obj.location.query;
+    this.state.pId = pId
+    this.state.priceId = priceId;
+    this.state.cid = cid;
+    // this.state.rId = rId;
+    let queryObj = sessionStorage.getItem('queryObj');
+    if (!!queryObj) {
+      queryObj = JSON.parse(queryObj)
+    } else {
+      queryObj = {}
+    }
+    // rId不存在 不作处理
+    // 都存在 rid相等 不做处理
+    if (!rId || (!!rId && !!queryObj.rId && rId === queryObj.rId)) {
+      return
+    }
+    // rId存在 session不存在 处理数据
+    // 都存在 rid不相等 处理数据
+    if ((!!rId && !queryObj.rId) || (!!rId && !!queryObj.rId && rId !== queryObj.rId)) {
+      this.state.queryParams = {
+        pItemId: pItemId,
+        sId: sId,
+        rId: rId,
+        priceId: priceId
+      }
+      this.state.isGetData = true
+      sessionStorage.setItem('queryObj', JSON.stringify(this.state.queryParams))
+      this.openInsertModal()
+      return
+    }
+  }
   getPriceDetail = () => {
     let { priceId, baseInfo } = this.state;
     let self = this;
@@ -196,8 +231,8 @@ export default class Index extends React.Component{
     let self = this;
     axios({
       method: 'get',
-      url: `http://insbak.ananyun.net/zongan/GetSettingJobNos${params}`
-      // url: `http://pre2.insbak.ananyun.net/zongan/GetSettingJobNos${params}`
+      // url: `http://insbak.ananyun.net/zongan/GetSettingJobNos${params}`
+      url: `http://pre2.insbak.ananyun.net/zongan/GetSettingJobNos${params}`
     }).then(({data}) => {
       if (data.ResultCode === 1 && data.jobNos && data.jobNos.length) {
         let  jobnoList = data.jobNos.map((item) => {
@@ -319,12 +354,7 @@ export default class Index extends React.Component{
     };
     let self = this;
     reply_remark_api(params).then((res) => {
-      let msgContent = {};
-      msgContent.type = "IM";
-      msgContent.target = 'C_' + baseInfo.userid;
-      msgContent.msg = replyContent;
-      msgContent.time = Date.now();
-      localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
+      sendIM(baseInfo.userid, replyContent)
       self.getMessageList();
       if (updatePriceDetail) {
         self.getPriceDetail()
@@ -486,13 +516,7 @@ export default class Index extends React.Component{
     let {priceId, cid, baseInfo} = this.state;
     let self = this;
     finish_policy(priceId, cid).then((res) => {
-      let msgContent = {};
-      msgContent.type = "IM";
-      msgContent.target = 'C_' + baseInfo.userid;
-      msgContent.msg = 'replyContent';
-      msgContent.time = Date.now();
-      localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
-      // self.getNodeData();
+      sendIM(baseInfo.userid, 'replyContent')
       self.getMessageList();
       self.getPriceDetail()
     }, (err) => {
@@ -512,12 +536,7 @@ export default class Index extends React.Component{
     }
     let self = this;
     confirm_price(params).then((res) => {
-      let msgContent = {};
-      msgContent.type = "IM";
-      msgContent.target = 'C_' + baseInfo.userid;
-      msgContent.msg = 'replyContent';
-      msgContent.time = Date.now();
-      localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
+      sendIM(baseInfo.userid, 'replyContent')
       // refresh messageList & refresh order status
       self.getMessageList();
       self.getPriceDetail();
@@ -544,13 +563,7 @@ export default class Index extends React.Component{
       self.setState({
         isShowRobTip: false
       })
-      let msgContent = {};
-      msgContent.type = "IM";
-      msgContent.target = 'C_' + baseInfo.userid;
-      msgContent.msg = '';
-      msgContent.time = Date.now();
-      localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
-      // self.getNodeData()
+      sendIM(baseInfo.userid, '')
       self.getMessageList();
       self.getPriceDetail();
     })
@@ -563,9 +576,15 @@ export default class Index extends React.Component{
   }
   // 显示报价弹窗
   openInsertModal = () => {
-    this.setState({
-      isShowSubmit: true
-    })
+    let {allInsuranceCp} = this.state
+    if (allInsuranceCp.length > 0) {
+      this.setState({
+        isShowSubmit: true
+      })
+    } else {
+      this.getAllInsuranceCp(1)
+    }
+
   };
   // 关闭报价弹窗
   closeSubmitPriceModal = (type) => {
@@ -579,10 +598,14 @@ export default class Index extends React.Component{
     }
   }
   // 获取保险公司
-  getAllInsuranceCp = () => {
+  getAllInsuranceCp = (val) => {
+    let {allInsuranceCp} = this.state;
     let tmpCpList =  []
     let self = this;
     let pId = this.state.pId || this.props.location.query.pId;
+    if (allInsuranceCp.length > 0) {
+      return;
+    }
     get_insurance_cp_list(pId).then((res) => {
       if (res.dtoList && res.dtoList.length) {
         res.dtoList.map((item, index) => {
@@ -599,7 +622,12 @@ export default class Index extends React.Component{
         self.setState({
           allInsuranceCp: tmpCpList
         })
-        this.state.allInsuranceCp = tmpCpList
+        self.state.allInsuranceCp = tmpCpList
+        if (type) {
+          self.setState({
+            isShowSubmit: true
+          })
+        }
       }
     }).catch((err) => {
       console.log('cpList: ', err)
@@ -777,7 +805,9 @@ export default class Index extends React.Component{
       jobnoList,
       chooseTitle,
       isShowJobNo,
-      chooseList
+      chooseList,
+      // rId
+      isGetData
     } = this.state;
     return (
       <div className='content-wrapper' onClick={this.closeModal}>
@@ -866,6 +896,8 @@ export default class Index extends React.Component{
         {
           isShowSubmit
           ? <SubmitPrice
+              // rId={rId}
+              isGetData={isGetData}
               priceId={priceId}
               baseInfo={baseInfo}
               queryPriceInfo={queryPriceInfo}

@@ -35,19 +35,6 @@ export default class BaseInfo extends React.Component{
   getPrice = (supplierId) => {
     this.props.btnClick(supplierId);
   }
-  changesupplierIdToName = (id) => {
-    let allInsuranceCp = this.props.allInsuranceCp;
-    let supplierName = '';
-    if (allInsuranceCp && allInsuranceCp.length) {
-      allInsuranceCp.map((item, index) => {
-        if (item.id === Number(id)) {
-          supplierName = item.name;
-          return supplierName;
-        }
-      })
-    }
-    return supplierName;
-  }
   formateCoverageItem (item) {
     let str = '投保';
     if (item.Amount) {

@@ -1,7 +1,7 @@
 import React from 'react';
 import MpModal from '../components/MpModal';
 import {Form, Input, message } from 'antd';
-const { hasCommercialInsurance, changesupplierIdToName } = require('../util/util.js');
+const { hasCommercialInsurance, sendIM } = require('../util/util.js');
 import {submit_policy} from '../services/index';
 import qs from 'query-string';
 import '../stylesheets/GeneratePolicy.less';
@@ -68,12 +68,7 @@ export default class GeneratePolicy extends React.Component{
     }
     let tmpParams = qs.stringify(params);
     submit_policy(tmpParams).then((res) => {
-      let msgContent = {};
-      msgContent.type = "IM";
-      msgContent.target = 'C_' + baseInfo.userid;
-      msgContent.msg = 'replyContent';
-      msgContent.time = Date.now();
-      localStorage.setItem('_receiveMsgKey', JSON.stringify(msgContent));
+      sendIM(baseInfo.userid, 'replyContent')
       self.props.close(1)
     }).catch((err) => {
       console.log(err)

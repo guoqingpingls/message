@@ -49,7 +49,7 @@ import abIcon from '../assets/images/ab-icon.png';
 import operateIcon from '../assets/images/open-operate.png';
 import operateIconActive from '../assets/images/open-operate-active.png';
 import guide from '../assets/images/setting-guide.png';
-const { insuranceInString, changesupplierIdToName, date, openNavUrl } = require('../util/util.js');
+// const { insuranceInString, changesupplierIdToName, date, openNavUrl } = require('../util/util.js');
 const TabPane = Tabs.TabPane;
 const pageName = 'Home';
 const confirm = Modal.confirm;
@@ -1281,7 +1281,7 @@ export default class Home extends React.Component {
                                 coverageList.push({
                                     DetailId: ite.DetailId,
                                     InsuredPremium: ite.InsuredPremium,
-                                    name: insuranceInString(ite.DetailId)
+                                    // name: insuranceInString(ite.DetailId)
                                 })
                             })
                             list.push({
