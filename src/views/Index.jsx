@@ -14,6 +14,7 @@ import MpModal from '../components/MpModal';
 import qs from 'query-string';
 import { Scrollbars } from 'react-custom-scrollbars';
 import CheckModal from './CheckModal';
+import CheckModal1 from './CheckModal1';
 import SubmitPrice from './SubmitPrice';
 import SendImageModal from './SendImageModal';
 import GeneratePolicy from './GeneratePolicy';
@@ -595,7 +596,7 @@ export default class Index extends React.Component{
     }
   }
   // 获取保险公司
-  getAllInsuranceCp = (val) => {
+  getAllInsuranceCp = (type) => {
     let {allInsuranceCp} = this.state;
     let tmpCpList =  []
     let self = this;
@@ -852,9 +853,21 @@ export default class Index extends React.Component{
             </Tabs>
           </div>
         </div>
-        {
+        {/* {
           isShowCheckModal
           ? <CheckModal
+              ref="checkModal"
+              hideCheckModal={this.hideCheckModal}
+              priceId={priceId}
+              imageSrc={previewImage}
+              imagesInArr={imagesInArr}
+              baseInfo={baseInfo}
+            />
+          : null
+        } */}
+        {
+          isShowCheckModal
+          ? <CheckModal1
               ref="checkModal"
               hideCheckModal={this.hideCheckModal}
               priceId={priceId}
