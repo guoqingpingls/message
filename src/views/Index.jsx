@@ -11,10 +11,10 @@ import EnquireRecord from './EnquireRecord';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import MpModal from '../components/MpModal';
+import Loading from '../components/Loading';
 import qs from 'query-string';
 import { Scrollbars } from 'react-custom-scrollbars';
 import CheckModal from './CheckModal';
-import CheckModal1 from './CheckModal1';
 import SubmitPrice from './SubmitPrice';
 import SendImageModal from './SendImageModal';
 import GeneratePolicy from './GeneratePolicy';
@@ -87,6 +87,8 @@ export default class Index extends React.Component{
       jobnoList: [],
       chooseList: [],
       isGetData: false,
+      loadingText: '',
+      isShowReqLoading: false, // 是否显示请求loading
     };
   }
   componentWillMount () {
@@ -178,7 +180,7 @@ export default class Index extends React.Component{
     get_message_list(priceId).then((res) => {
       if (res.returnCode === 0 && res.dtoList && res.dtoList.length) {
         this.getChatImages(res.dtoList)
-        let messageList = res.dtoList.map((item) => {
+        let messageList = res.dtoList.reverse().map((item, index) => {
           if (item.config && item.config.length > 0) {
             let temp = JSON.parse(item.config);
             if (temp.coverageList && temp.coverageList.length > 0) {
@@ -209,11 +211,11 @@ export default class Index extends React.Component{
             }
           }
           // 消息操作按钮
-          item.btnArray = self.getBtnArray(item, baseInfo.status)
+          item.btnArray = self.getBtnArray(item, baseInfo.status, index)
           return item
         })
         self.setState({
-          messageList: messageList.reverse()
+          messageList: messageList
         })
       }
     })
@@ -230,9 +232,10 @@ export default class Index extends React.Component{
     let self = this;
     axios({
       method: 'get',
-      // url: `http://insbak.ananyun.net/zongan/GetSettingJobNos${params}`
-      url: `http://pre2.insbak.ananyun.net/zongan/GetSettingJobNos${params}`
+      url: `http://insbak.ananyun.net/zongan/GetSettingJobNos${params}`
+      // url: `http://pre2.insbak.ananyun.net/zongan/GetSettingJobNos${params}`
     }).then(({data}) => {
+      console.log(data)
       if (data.ResultCode === 1 && data.jobNos && data.jobNos.length) {
         let  jobnoList = data.jobNos.map((item) => {
           if (isInsurance) {
@@ -269,10 +272,10 @@ export default class Index extends React.Component{
     })
   }
   // 获取消息操作按钮
-  getBtnArray = (item, status) => {
+  getBtnArray = (item, status, index) => {
     let btnArray = []
     // 抢单
-    if (status === 301) {
+    if (status === 301 && index === 0) {
       btnArray.push({
         btnClassName: 'message-btn-default btn-can-click',
         btnText: '抢单'
@@ -774,6 +777,21 @@ export default class Index extends React.Component{
       previewImage: ''
     })
   }
+  // 显示loading
+  showReqLoading = (text) => {
+    let {isShowReqLoading} = this.state;
+    this.setState({
+      isShowReqLoading: true,
+      loadingText: text || ''
+    })
+  }
+  // hide loading
+  hideReqLoading = () => {
+    let {isShowReqLoading} = this.state;
+    this.setState({
+      isShowReqLoading: false
+    })
+  }
   render() {
     let {
       refreshData,
@@ -805,7 +823,9 @@ export default class Index extends React.Component{
       chooseTitle,
       isShowJobNo,
       chooseList,
-      isGetData
+      isGetData,
+      loadingText,
+      isShowReqLoading
     } = this.state;
     return (
       <div className='content-wrapper' onClick={this.closeModal}>
@@ -853,21 +873,9 @@ export default class Index extends React.Component{
             </Tabs>
           </div>
         </div>
-        {/* {
-          isShowCheckModal
-          ? <CheckModal
-              ref="checkModal"
-              hideCheckModal={this.hideCheckModal}
-              priceId={priceId}
-              imageSrc={previewImage}
-              imagesInArr={imagesInArr}
-              baseInfo={baseInfo}
-            />
-          : null
-        } */}
         {
           isShowCheckModal
-          ? <CheckModal1
+          ? <CheckModal
               ref="checkModal"
               hideCheckModal={this.hideCheckModal}
               priceId={priceId}
@@ -903,6 +911,8 @@ export default class Index extends React.Component{
         {
           isShowSubmit
           ? <SubmitPrice
+              showReqLoading={this.showReqLoading}
+              hideReqLoading={this.hideReqLoading}
               isGetData={isGetData}
               priceId={priceId}
               baseInfo={baseInfo}
@@ -923,6 +933,8 @@ export default class Index extends React.Component{
         {
           isSendImage
           ? <SendImageModal
+              showReqLoading={this.showReqLoading}
+              hideReqLoading={this.hideReqLoading}
               defaultImageUri={defaultImageUri}
               hideSendImage={this.hideSendImage}
               priceId={priceId}
@@ -940,6 +952,11 @@ export default class Index extends React.Component{
         >
           <p>您确认要接此订单么？</p>
         </Modal>
+        {
+          isShowReqLoading
+          ? <Loading loadingText={loadingText}/>
+          : null
+        }
       </div>
     )
   }

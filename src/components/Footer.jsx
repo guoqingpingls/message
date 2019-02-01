@@ -146,6 +146,13 @@ export default class Footer extends React.Component {
     let content = e.item.props.children;
     this.props.replyRemark(content);
   }
+  // 显示 ||　隐藏工号栏
+  showOperate = () => {
+    let {isShowOperate} = this.state;
+    this.setState({
+      isShowOperate: !isShowOperate
+    })
+  }
   render () {
     let {
       baseInfo,

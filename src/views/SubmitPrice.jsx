@@ -325,7 +325,9 @@ export default class SubmitPrice extends React.Component{
   submitPrice = (params) => {
     let self = this;
     let {baseInfo} = this.props;
+    this.props.showReqLoading('正在提交....')
     submit_to_get_price(params).then((res) => {
+      this.props.hideReqLoading()
       self.props.closeSubmitPriceModal(1) // 关闭弹窗
       // 清空数据
       // self.refreshData()
@@ -362,9 +364,10 @@ export default class SubmitPrice extends React.Component{
     let tmpsupplierId = supplierId || allInsuranceCp[0].id;
     let self = this;
     let params = `priceId=${priceId}&supplierId=${tmpsupplierId}`;
+    // this.props.showReqLoading("获取数据中....")
     get_price_info(params).then(res => {
-      console.log(res)
       if (res.returnCode === 2) {
+        // self.props.hideReqLoading()
         this.state.dataType = 2
         if (res.dto) {
           self.dealBaseData(res.dto, true, true)
@@ -372,6 +375,8 @@ export default class SubmitPrice extends React.Component{
           self.resetData()
         }
       }
+    }).catch((err) => {
+      // self.props.hideReqLoading()
     })
   }
   // // 数据置零
@@ -379,7 +384,7 @@ export default class SubmitPrice extends React.Component{
     let {totalList} = this.state;
     // 商业险保费置0
     let result = []
-    result = totalList.length && totalList.map((item) => {
+    totalList.length && totalList.map((item) => {
       if (item.InsDetailId != 10501) {
         item.InsuredPremium = 0;
         result.push(item)

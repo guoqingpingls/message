@@ -63,10 +63,13 @@ export default class SendImageModal extends React.Component{
       imageuris: tmpList,
       cid: cid
     };
+    this.props.showReqLoading('图片发送中.....')
     reply_remark_api(params).then((res) => {
       sendIM(baseInfo.userid, '')
+      this.props.hideReqLoading()
       self.props.hideSendImage(1);
     }).catch((err) => {
+      this.props.hideReqLoading()
       console.log('err: ', err);
     })
   }
