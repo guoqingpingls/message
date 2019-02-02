@@ -56,7 +56,7 @@ export default class Header extends React.Component {
       <div className='header-wrapper'>
         <div className='header-left'>
           <span className='title'>{baseInfo.licenseNo || ''}</span>
-          <div className='check-container'>
+          {/* <div className='check-container'>
             {
               checkList.map((item, index) => {
                 if (baseInfo.confirImage && baseInfo.confirImage.indexOf(item.val) > -1) {
@@ -76,7 +76,7 @@ export default class Header extends React.Component {
                 }
               })
             }
-          </div>
+          </div> */}
         </div>
         <span>当前状态:{this.formStatus(baseInfo.status)}</span>
       </div>

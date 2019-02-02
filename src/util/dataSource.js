@@ -48,7 +48,8 @@ const insuranceCpList = [
     {label: '中华联合', value: 9805},
     {label: '中煤', value: 9821},
     {label: '中银', value: 9825},
-    {label: '中路', value: 9833}
+    {label: '中路', value: 9833},
+    {label: '众安', value: 9852}
 ];
 const coverageList = [
   {label: '车损险', value: '10001'},

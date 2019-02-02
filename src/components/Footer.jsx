@@ -3,39 +3,26 @@ import axios from 'axios';
 import ChooseJobNo from '../views/ChooseJobNo'
 import Iframe from './Iframe'
 import '../stylesheets/Footer.less';
-import {isEmptyObject} from '../util/util.js';
+import {isEmptyObject, openNavUrl} from '../util/util.js';
 import { Dropdown, Menu, Icon, Row, Col, Tooltip, Modal } from 'antd';
 import tip from '../assets/images/tip.png';
 import sendImage from '../assets/images/send-image.png';
 import operateIcon from '../assets/images/open-operate.png';
 import operateIconActive from '../assets/images/open-operate-active.png';
 import abIcon from '../assets/images/ab-icon.png';
-// import guide from '../assets/images/setting-guide.png';
 export default class Footer extends React.Component {
   constructor (props) {
     super(props);
     this.state = {
       isShift: false,
-      // jobnoList: [],
       isShowOperate: true,    // 显示报价栏
       isShowJobnoModal: false,
       isShowInsuranceModal: false,
       isShowIframe: false,    // 显示Iframe
       iframeSrc: '',
-      allInsuranceCp: [],
-      // isShowJobNo: false
+      allInsuranceCp: []
     }
   }
-  // componentDidMount () {
-  //   this.getJobNo()
-  // }
-  // componentWillReceiveProps (nextProps) {
-  //   if (this.props.allInsuranceCp !== nextProps.allInsuranceCp) {
-  //     this.setState({
-  //       allInsuranceCp: nextProps.allInsuranceCp
-  //     })
-  //   }
-  // }
   alwaysUseReplay = () => {
     this.props.alwaysUseReplay();
   }
@@ -152,6 +139,16 @@ export default class Footer extends React.Component {
     this.setState({
       isShowOperate: !isShowOperate
     })
+  }
+  experienceQuote = () => {
+    const { baseInfo, priceId } = this.props;
+    const currUrl = ('http://' + location.host);
+    const url = `http://quote.ananyun.net/information?PriceItemId=${baseInfo.priceitemid}&PriceId=${priceId}`
+    if (baseInfo.licenseNo) {
+      openNavUrl(url, baseInfo.licenseNo + '-报价');
+    } else {
+      openNavUrl(url, baseInfo.priceno + '-报价');
+    }
   }
   render () {
     let {
@@ -294,7 +291,7 @@ export default class Footer extends React.Component {
                     } 
                   </div>
                   <div className='ver-line'></div>
-                  <div className='right-item active'  style={{padding: '0px 10px',width:'auto'}} onClick={this.btn1Click}>体验快速报价</div>
+                  <div className='right-item active'  style={{padding: '0px 10px',width:'auto'}} onClick={this.experienceQuote}>体验快速报价</div>
                 </div>
               </Col>
             </Row>
@@ -313,23 +310,14 @@ export default class Footer extends React.Component {
           </Dropdown>
         </div>
         <div className='input-container'>
-          <textarea ref='reply' className='input-content' type="text" cols='7'
+          <textarea ref='reply' className='input-content' type="text"
             placeholder="请输入..."
             onKeyDown={(e) => { this.keyDown(e) }}>
           </textarea>
-          <div className='operate-container'>
-            {/* <div className='left' onClick={this.abOperate} style={{ visibility: (Number(baseInfo.status) != -9) ? 'visible' : 'hidden' }}>
-              <img src={tip} className="left-tip"/>
-              <span>关闭或转接</span>
-            </div> */}
-            <div className='left' onClick={this.insertPrice}>
-              {/* <img src={tip} className="left-tip"/> */}
-              <span>插入报价</span>
-            </div>
-            <div className='right'>
-              <button className='btn-default' onClick={() => { this.replyRemark() }}>发表回复</button>
-            </div>
-          </div>
+        </div>
+        <div className='operate-container'>
+          <span onClick={this.insertPrice}>插入报价</span>
+          <button className='btn-default' onClick={this.replyRemark}>发表回复</button>
         </div>
         {
           isShowIframe

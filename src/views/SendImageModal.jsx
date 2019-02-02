@@ -50,10 +50,7 @@ export default class SendImageModal extends React.Component{
       return;
     }
     let tmpList = fileList.map((item) => {
-      // if (item.status === 'done' && item.response && item.response.resultMap && item.response.resultMap.uri) {
-        return defaultImageUri + item.response.resultMap.uri
-        // tmpList.push(tmpUri)
-      // }
+      return defaultImageUri + item.response.resultMap.uri
     })
     let params = {
       priceid: priceId,

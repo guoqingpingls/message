@@ -15,20 +15,6 @@ export default class ChatImageList extends React.Component{
       baseUrl: 'https://openapi.youbaolian.cn/api/preprice-ins/files/upload/download?priceId='
     }
   }
-  // componentWillReceiveProps (nextProps) {
-  //   if (this.props.chatImageList !== nextProps.chatImageList) {
-  //     this.setState({
-  //       chatImageList: nextProps.chatImageList
-  //     })
-  //   }
-  // }
-  // componentDidMount () {
-  //   if (this.props.chatImageList && this.props.chatImageList.length > 0 ) {
-  //     this.setState({
-  //       chatImageList: this.props.chatImageList
-  //     })
-  //   }
-  // }
   upDownSort = () => {
     const { positiveSort, chatImageList } = this.state;
     this.setState({

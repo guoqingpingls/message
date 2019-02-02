@@ -34,7 +34,6 @@ export default class CheckModal extends React.Component {
     this.state = {
       isShowRight: false,     // 是否显示右边的识别部分
       choosedIndex: null,
-      isShowLoading: false,
       imageInfo: {},
       DLFront: {
         LicenseNo: '',   //号牌号码
@@ -71,9 +70,6 @@ export default class CheckModal extends React.Component {
         Address: '',    //地址
         IdNo: '',       //身份证号
       },
-      defaultWidth: 412,
-      defaultHeight: 316,
-      path: '',
       images: [],
       // new
       modalWidth: '50%',
@@ -82,24 +78,6 @@ export default class CheckModal extends React.Component {
     }
   }
   componentWillMount = () => {
-    // 默认图片大小
-    // let {imageSrc, imagesInArr} = this.props;
-    // let image = new Image();
-    // image.src = imageSrc;
-    // this.state.imageInfo = {
-    //   path: imageSrc,
-    //   width: image.width,
-    //   height: image.height,
-    //   rotateDeg: 0
-    // }
-    // this.setState({
-    //   path: imageSrc,
-    //   images: imagesInArr,
-    //   defaultHeight: image.height,
-    //   defaultWidth: image.width
-    // })
-
-
     let {imageSrc, imagesInArr} = this.props;
     this.setState({
       currentImageIndex: imagesInArr.indexOf(imageSrc)
@@ -109,17 +87,10 @@ export default class CheckModal extends React.Component {
     // 图片显示垂直居中
     let imageContainer = this.refs.imageContainer
     imageContainer.style.lineHeight = `${imageContainer.clientHeight}px`;
-
   }
   choosedItem = (index) => {
     this.setState({
       choosedIndex: index
-    })
-  }
-  resetChooseIndex = () => {
-    this.setState({
-      choosedIndex: null,
-      isShowRight: false,
     })
   }
   closeModal = () => {
@@ -168,21 +139,15 @@ export default class CheckModal extends React.Component {
     let self = this;
     let tmoImageType = Number(this.state.choosedIndex) + 1;
     let params = '?imageUrl=' + imagesInArr[currentImageIndex] + '&imageType=' + tmoImageType + '&userId=' + baseInfo.userid + '&partnerId=' + baseInfo.partnerId
-    this.setState({
-      isShowLoading: true
-    })
+    this.props.showReqLoading('识别中, 请稍候...')
     image_recognition(params).then((res) => {
       if (res.returnCode === 2) {
         if (res.dtoList.length) {
           self.getDataInType(res.dtoList[0]);
-          this.setState({
-            isShowLoading: false
-          })
+          self.props.hideReqLoading()
         }
       } else {
-        this.setState({
-          isShowLoading: false
-        })
+        self.props.hideReqLoading()
         notification.open({
           message: res.message,
           duration: 3
@@ -273,35 +238,33 @@ export default class CheckModal extends React.Component {
       dto: resultObj
     }
     let params = JSON.stringify(tmp);
-    this.setState({
-      isShowLoading: true
+    this.props.showReqLoading('正在提交...')
+    update_car_info(tmp).then((res) => {
+      self.props.hideReqLoading()
+      if (res.returnCode === 2) {
+        notification.open({
+          message: res.message,
+          duration: 3
+        });
+      } else {
+        notification.open({
+          message: res.message,
+          duration: 3
+        });
+      }
+      self.resetChooseIndex()
+      self.props.hideCheckModal(1);
+    }).catch ((err) => {
+      self.props.hideReqLoading()
     })
-    if (tmp.priceId && isEmptyObject(tmp.dto)) {
-      update_car_info(tmp).then((res) => {
-        self.setState({
-          isShowLoading: false
-        })
-        if (res.returnCode === 2) {
-          notification.open({
-            message: res.message,
-            duration: 3
-          });
-        } else {
-          notification.open({
-            message: res.message,
-            duration: 3
-          });
-        }
-          // self.setState({
-          //     choosedIndex: null
-          // })
-        self.props.hideCheckModal(1);
-      });
-    }
-    self.setState({
-      isShowLoading: false
-    });
-}
+    self.props.hideReqLoading()
+  }
+  resetChooseIndex = () => {
+    this.setState({
+      choosedIndex: null,
+      isShowRight: false,
+    })
+  }
   changeValue = (e) => {
     const {DLFront, DLBack, IDFront, IDBack} = this.state;
     let target = e.target;
@@ -334,167 +297,25 @@ export default class CheckModal extends React.Component {
       })
     }
   }
-  enlarge = () => {
-    let {path, imageInfo} = this.state;
-    let image = new Image();
-    image.src = path;
-    if (imageInfo.height > 824 && imageInfo.width > 632) {
-      return;
-    }
-    this.setState({
-      imageInfo: Object.assign({}, imageInfo, {
-        width: imageInfo.width * 1.5,
-        height: imageInfo.height * 1.5
-      })
-    })
-  }
-  narrow = () => {
-    let {path, imageInfo} = this.state
-    let image = new Image();
-    image.src = path;
-    if (imageInfo.height < 50 && imageInfo.width < 50) {
-      return;
-    }
-    this.setState({
-      imageInfo: Object.assign({}, imageInfo, {
-        width: imageInfo.width * 0.5,
-        height: imageInfo.height * 0.5
-      })
-    })
-  }
   toLast = () => {
     let {currentImageIndex} = this.state;
     this.setState({
       currentImageIndex: currentImageIndex-1
     })
-    // const {path, imageInfo, images, defaultHeight, defaultWidth} = this.state;
-    // if (images.indexOf(path) > 0) {
-    //   let pathPosition = images.indexOf(path) - 1;
-    //   let image = new Image();
-    //   image.src = images[pathPosition]
-    //   this.setState({
-    //     path: images[pathPosition],
-    //     choosedIndex: null,
-    //     defaultHeight: image.height,
-    //     defaultWidth: image.width,
-    //     imageInfo: Object.assign({}, imageInfo, {
-    //       src: images[pathPosition],
-    //       width: image.width,
-    //       height: image.height,
-    //       rotateDeg: 0
-    //     })
-    //   })
-    // }
   }
   toNext = () => {
     let {currentImageIndex} = this.state;
     this.setState({
       currentImageIndex: currentImageIndex+1
     })
-    // const {path, imageInfo, images, defaultHeight, defaultWidth} = this.state;
-    // if (images.indexOf(path) < images.length -1) {
-    //   let pathPosition = images.indexOf(path) + 1;
-    //   let image = new Image();
-    //   image.src = images[pathPosition]
-    //   this.setState({
-    //     path: images[pathPosition],
-    //     choosedIndex: null,
-    //     defaultHeight: image.height,
-    //     defaultWidth: image.width,
-    //     imageInfo: Object.assign({}, imageInfo, {
-    //       src: images[pathPosition],
-    //       width: image.width,
-    //       height: image.height,
-    //       rotateDeg: 0
-    //     })
-    //   })
-    // }
   }
   leftRotate = () => {
     let imageModal = this.refs.imageModal
     imageModal.handleRotateLeft()
-    // let {imageInfo, defaultHeight, defaultWidth} = this.state;
-    // let tmpRotate = Number(imageInfo.rotateDeg) - 90;
-    // if (tmpRotate%180 === 0) {
-    //   this.setState({
-    //     imageInfo:  Object.assign({}, imageInfo, {
-    //       rotateDeg: tmpRotate,
-    //       width: defaultWidth,
-    //       height: defaultHeight
-    //     })
-    //   })
-    // } else {
-    //   this.setState({
-    //     imageInfo:  Object.assign({}, imageInfo, {
-    //       rotateDeg: tmpRotate,
-    //       width: defaultHeight,
-    //       height: defaultWidth
-    //     })
-    //   })
-    // }
   }
   rightRotate = () => {
     let imageModal = this.refs.imageModal
     imageModal.handleRotateRight()
-    // let {imageInfo, defaultWidth, defaultHeight} = this.state;
-    // let tmpRotate = Number(imageInfo.rotateDeg) + 90;
-    // if (tmpRotate%180 === 0) {
-    //   this.setState({
-    //     imageInfo: Object.assign({}, imageInfo, {
-    //       rotateDeg: tmpRotate,
-    //       width: defaultWidth,
-    //       height: defaultHeight
-    //     })
-    //   })
-    // } else {
-    //   this.setState({
-    //     imageInfo: Object.assign({}, imageInfo, {
-    //       rotateDeg: tmpRotate,
-    //       width: defaultHeight,
-    //       height: defaultWidth
-    //     })
-    //   })
-    // }
-  }
-  dealRotate (deg) {
-    let {imageInfo, defaultWidth, defaultHeight} = this.state;
-    if (deg%180 === 0) {
-      this.setState({
-        imageInfo: Object.assign({}, imageInfo, {
-          rotateDeg: deg,
-          width: defaultWidth,
-          height: defaultHeight
-        })
-      })
-    } else {
-      this.setState({
-        imageInfo: Object.assign({}, imageInfo, {
-          rotateDeg: deg,
-          width: defaultHeight,
-          height: defaultWidth
-        })
-      })
-    }
-  }
-  resetImage = () => {
-    let { path, imageInfo, defaultHeight, defaultWidth } = this.state;
-    if ((imageInfo.rotateDeg)%180 === 0) {
-      this.setState({
-        imageInfo: Object.assign({}, imageInfo, {
-          height: defaultHeight,
-          width: defaultWidth,
-          rotateDeg: 0
-        })
-      })
-    } else {
-      this.setState({
-        imageInfo: Object.assign({}, imageInfo, {
-          height: defaultWidth,
-          width: defaultHeight,
-          rotateDeg: 0
-        })
-      })
-    }
   }
   showRight = () => {
     this.setState({
@@ -525,11 +346,7 @@ export default class CheckModal extends React.Component {
       DLBack,
       IDFront,
       IDBack,
-      isShowLoading,
       imageInfo,
-      defaultHeight,
-      defaultWidth,
-      path,
       images,
       // rotateDeg,
       isShowRight,
@@ -543,7 +360,6 @@ export default class CheckModal extends React.Component {
         <div className='check-modal-wrapper' onClick = {(e) => { e.stopPropagation()}}>
           <div className='check-modal-left'>
             <div className='modal-image-container' ref='imageContainer'>
-              {/* <img className='show-image' style={{width: imageInfo.width+'px', height: imageInfo.height+'px', transform: 'rotate('+ imageInfo.rotateDeg + 'deg)'}} ref='showImage' src={imageInfo.path} alt=""/> */}
               <ImageModal 
                   ref='imageModal'
                   src={imagesInArr[currentImageIndex]}  /* 当前图片路径 */
@@ -561,10 +377,6 @@ export default class CheckModal extends React.Component {
             {
               isShowRight
               ? <div className='operate-wrapper'>
-                  {/* <img className='operate-item' onClick={this.enlarge} src={require("../assets/images/check-icon/enlarge.gif")} alt=""/>
-                  <img className='operate-item' onClick={this.narrow} src={require("../assets/images/check-icon/narrow.gif")} alt=""/>
-                  <img className='operate-item' onClick={this.resetImage} src={require("../assets/images/check-icon/oneToOne.gif")} alt=""/>
-                  <span className='horizon-span'></span> */}
                   {
                     imagesInArr.length &&  currentImageIndex > 0
                     ? <img className='operate-item' onClick={this.toLast} src={require("../assets/images/check-icon/last.gif")} alt=""/>
@@ -579,7 +391,7 @@ export default class CheckModal extends React.Component {
                   <img className='operate-item' onClick={this.rightRotate} src={require("../assets/images/check-icon/rightRotate.gif")} alt=""/>
                   <img className='operate-item' onClick={this.leftRotate} src={require("../assets/images/check-icon/leftRotation.gif")} alt=""/>
                   <span className='horizon-span'></span>
-                  <a href={path} download={path}>
+                  <a href={imagesInArr[currentImageIndex]} download={imagesInArr[currentImageIndex]}>
                     <img ref='downLoad' className='operate-item' src={require("../assets/images/check-icon/down.gif")} alt=""/>
                   </a>
                 </div>
@@ -787,7 +599,6 @@ export default class CheckModal extends React.Component {
               </div>
             : <div></div>
           }
-          {/* <Loading isShowLoading={isShowLoading}/> */}
         </div>
       </MpModal>
      

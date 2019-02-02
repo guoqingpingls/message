@@ -165,7 +165,7 @@ export default class Message extends React.Component{
         {
           messageList && messageList.length
           ? message
-          : <li>暂无消息</li>
+          : <li className='no-message'>暂无消息</li>
         }
       </ul>
      

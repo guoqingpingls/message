@@ -2,7 +2,7 @@ import React from 'react';
 import MpModal from '../components/MpModal.jsx';
 import {Switch, Select, Icon, Upload, Modal, Button, message } from 'antd';
 import '../stylesheets/SubmitPrice.less';
-const { isEmptyObject, isHasCommercial, translateIdToName } = require('../util/util.js');
+const { isEmptyObject, isHasCommercial, translateIdToName, insuranceIdToName } = require('../util/util.js');
 const Option = Select.Option;
 import {
   get_price_info,
@@ -41,9 +41,7 @@ export default class SubmitPrice extends React.Component{
       fileList: [],    // 预览图片列表
       previewImage: '',   // 预览图片
       previewVisible: false,    // 显示预览modal
-      isShowToast: false,     // 是否显示商业险 !== 明细和 的提示
-      recordId: null,
-
+      isShowToast: false,     // 是否显示商业险 !== 明细和 的提示 
       commercialItems: [],    // 保险项目
       info: {},   // baseInfo queryInfo renewalInfo
       dataType: 0, // 0 baseInfo, 1 queryInfo, 2 renewalInfo
@@ -53,12 +51,16 @@ export default class SubmitPrice extends React.Component{
   }
   componentDidMount () {
     let { baseInfo, queryPriceInfo, isGetData } = this.props;
+    // debugger
     if (isGetData) {
-       
+      let info = sessionStorage.getItem('queryObj') && JSON.parse(sessionStorage.getItem('queryObj'))
+      this.state.defaultValue = insuranceIdToName(+info.sId);
+      this.state.supplierId = +info.sId;
+      this.getPriceInfo();
     }
     if (isEmptyObject(queryPriceInfo)) {
       this.state.dataType = 1
-      this.state.recordId = queryPriceInfo.SupplierId;
+      this.state.defaultValue = insuranceIdToName(+queryPriceInfo.SupplierId);
       this.state.supplierId = queryPriceInfo.SupplierId;
       this.dealBaseData(queryPriceInfo, true)
     } else {
@@ -297,7 +299,6 @@ export default class SubmitPrice extends React.Component{
       priceid: priceId,
       separate: isSeparate,
       checkStatus: checkStatus
-      // coverageList: JSON.stringify(totalList)
     }
     if (isHasBi) {
       let totalBi = 0;
@@ -329,8 +330,7 @@ export default class SubmitPrice extends React.Component{
     submit_to_get_price(params).then((res) => {
       this.props.hideReqLoading()
       self.props.closeSubmitPriceModal(1) // 关闭弹窗
-      // 清空数据
-      // self.refreshData()
+      // s
       self.dealCancel()
       // send IM
       sendIM(baseInfo.userid, 'replyContent')
@@ -353,7 +353,7 @@ export default class SubmitPrice extends React.Component{
   }
   // 保险公司改变
   dealChange = (value) => {
-    this.setState({defaultValue:value, recordId: null})
+    this.setState({defaultValue:value})
     this.state.supplierId = Number(value);
     this.getPriceInfo();
   }
@@ -586,7 +586,6 @@ export default class SubmitPrice extends React.Component{
       previewVisible,
       fileList,
       isShowToast,
-      recordId,
       commercialItems,    // 保险项list
       diff,
       detailTotal
@@ -617,7 +616,7 @@ export default class SubmitPrice extends React.Component{
                     style={{ width: 200 }}
                     placeholder="请选择投保的保险公司"
                     optionFilterProp="children"
-                    value={recordId || defaultValue || '请选择投保的保险公司'}
+                    value={defaultValue || '请选择投保的保险公司'}
                     onChange={this.dealChange}
                     onFocus={this.handleFocus}
                     onBlur={this.handleBlur}
@@ -627,7 +626,7 @@ export default class SubmitPrice extends React.Component{
                     {
                       allInsuranceCp && allInsuranceCp.map((item, index) => {
                         return (
-                          <Option key={index} value={item.id}>{item.name}</Option>
+                          <Option key={index} value={item.name}>{item.name}</Option>
                         )
                       })
                     }
@@ -637,7 +636,7 @@ export default class SubmitPrice extends React.Component{
                       style={{ width: 200 }}
                       placeholder="请选择投保的保险公司"
                       optionFilterProp="children"
-                      value={recordId || defaultValue || '请选择投保的保险公司'}
+                      value={defaultValue || '请选择投保的保险公司'}
                       onChange={this.dealChange}
                       onFocus={this.handleFocus}
                       onBlur={this.handleBlur}
@@ -647,7 +646,7 @@ export default class SubmitPrice extends React.Component{
                     {
                       allInsuranceCp && allInsuranceCp.map((item, index) => {
                         return (
-                          <Option key={index} value={item.id}>{item.searchName}</Option>
+                          <Option key={index} value={item.name}>{item.searchName}</Option>
                         )
                       })
                     }

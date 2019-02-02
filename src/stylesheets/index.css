@@ -8,3 +8,9 @@ body {
 #root{
   height: 100%;
 }
+/* 重置ul li样式 */
+ul,li{
+  padding: 0px;
+  margin: 0px;
+  list-style: none;
+}

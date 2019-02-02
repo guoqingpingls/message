@@ -1,0 +1,66 @@
+.content-wrapper {
+  width: 100%;
+  overflow: hidden;
+  padding: 20px;
+  background-color: #eee;
+  box-sizing: border-box;
+  position: relative;
+  height: 100%;
+  .content-container{
+    width: 100%;
+    height: 100%;
+    background-color: #fff;
+    display: flex;
+    flex-direction: row;
+    .left-container{
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      .meassge-container{
+        width: 100%;
+        min-height: 380px;
+        border: 1px solid #eaf1ef;
+        border-left: none;
+        border-right: none;
+        padding: 10px 0px 10px;
+        box-sizing: border-box;
+        overflow-y: auto;
+        background-color: #fbfbfb;
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+      }
+    }
+    .right-tab-container{
+      width: 340px;
+      border-left: 1px solid #eaf1ef;
+      height: 100%;
+      .tab-container{
+        text-align: center;
+        .tab-icon{
+          font-size: 22px !important;
+          display: block;
+        }
+      }
+    }
+  }
+}
+.ant-modal-mask{
+  background-color: rgba(7, 17, 27, 0.3);
+}
+.no-selection::selection{
+  background-color: transparent !important;
+}
+.ant-tabs-nav .ant-tabs-tab{
+  margin-right: 0px !important;
+  padding-left: 12px !important;
+  padding-right: 13px !important;
+}
+.ant-tabs{
+  height: 100%;
+}
+/* 询价图片tabpan */
+.ant-tabs:not(.ant-tabs-vertical) > .ant-tabs-content > .ant-tabs-tabpane {
+  overflow-y: hidden !important;
+  display: flex;
+}
