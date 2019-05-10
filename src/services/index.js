@@ -1,4 +1,4 @@
-import {apiHttpRequest} from '../utils/httpRequest';
+import {apiHttpRequest} from '../util/httpRequest';
 
 export const get_message_list = (priceId) => {
     return apiHttpRequest(`/preprice-ins/messages/${priceId}`)

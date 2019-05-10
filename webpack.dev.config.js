@@ -13,7 +13,7 @@ const ProgressBarPlugin = require('progress-bar-webpack-plugin');
 const clientConfig = {
     devServer: {
         open: true,
-        port: 3030,
+        port: 3031,
         historyApiFallback: true
     },
     devtool: 'eval-source-map',
